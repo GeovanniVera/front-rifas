@@ -1,0 +1,26 @@
+/* ================================
+   FORM ERROR BRIDGE — sole residual rule set
+   Everything else (field chrome, controls, floating labels, column
+   grids) migrated to Tailwind in phases 6D.2 / 6E.1.
+   This survives because FormField wraps ARBITRARY control children:
+   the wrapper-level descendant override can't be expressed as a
+   utility without fighting the cascade. Controls emit data-variant
+   (6D.2); unlayered module CSS intentionally wins over @layer
+   utilities so error borders beat the controls' own focus styles,
+   exactly like the original module did.
+   ================================ */
+.fieldError [data-variant='default'] {
+  border-color: #dc2626;
+}
+
+.fieldError [data-variant='default']:focus {
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.fieldError [data-variant='filled'] {
+  border-bottom-color: #dc2626;
+}
+
+.fieldError [data-variant='outlined'] {
+  border-color: #dc2626;
+}

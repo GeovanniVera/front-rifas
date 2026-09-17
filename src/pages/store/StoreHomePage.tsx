@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router'
 import { useProductsAvailable } from '../../features/store/hooks/useProducts'
 import { useRafflesActive } from '../../features/store/hooks/useRaffles'
-import { LuShoppingCart, LuTicket } from 'react-icons/lu'
+import { LuShoppingCart, LuTicket, LuPackage, LuSparkles, LuArrowRight, LuShieldCheck } from 'react-icons/lu'
 import styles from './StoreHomePage.module.css'
 
 export default function StoreHomePage() {
@@ -9,20 +9,62 @@ export default function StoreHomePage() {
   const { data: products = [], isLoading: productsLoading } = useProductsAvailable()
   const { data: raffles = [], isLoading: rafflesLoading } = useRafflesActive()
 
+  const scrollToSection = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+  }
+
   return (
     <div className={styles.page}>
-      {/* Hero */}
+      {/* Hero — estilo categoría de tienda real */}
       <section className={styles.hero}>
-        <LuTicket size={40} className={styles.heroIcon} />
-        <h1 className={styles.heroTitle}>TiendaRifas — Tecnología y sorteos</h1>
+        <div className={styles.heroBg}>
+          <div className={`${styles.floatIcon} ${styles.floatIcon1}`}>
+            <LuTicket size={110} />
+          </div>
+          <div className={`${styles.floatIcon} ${styles.floatIcon2}`}>
+            <LuPackage size={80} />
+          </div>
+          <div className={`${styles.floatIcon} ${styles.floatIcon3}`}>
+            <LuSparkles size={56} />
+          </div>
+        </div>
+
+        <span className={styles.heroEyebrow}>Rifas · Tecnología · Sorteos</span>
+        <h1 className={styles.heroTitle}>
+          Participá en rifas y llevate <span className={styles.heroHighlight}>la tecnología</span>{' '}
+          que querés
+        </h1>
         <p className={styles.heroSubtitle}>
           Comprá componentes de tecnología al mejor precio, o participá en nuestras rifas
           para llevarte un producto por una fracción de su valor.
         </p>
+
+        <div className={styles.heroCtas}>
+          <button className={styles.heroCtaPrimary} onClick={() => scrollToSection('seccion-rifas')}>
+            Explorar rifas
+            <LuArrowRight size={16} />
+          </button>
+          <button className={styles.heroCtaGhost} onClick={() => scrollToSection('seccion-productos')}>
+            Ver productos
+          </button>
+        </div>
+
+        <div className={styles.heroStats}>
+          <span>
+            <strong>{raffles.length}</strong> rifas activas
+          </span>
+          <span>
+            <strong>{products.length}</strong> productos
+          </span>
+          <span>
+            <LuShieldCheck size={14} />
+            pagos seguros
+          </span>
+        </div>
       </section>
 
       {/* Rifas activas (backend) */}
-      <section>
+      <section id="seccion-rifas">
         <h2 className={styles.sectionTitle}>Rifas activas</h2>
         {rafflesLoading ? (
           <p className="text-fg-muted py-8 text-center">Cargando rifas...</p>
@@ -78,7 +120,7 @@ export default function StoreHomePage() {
       </section>
 
       {/* Productos en venta (backend) */}
-      <section>
+      <section id="seccion-productos">
         <h2 className={styles.sectionTitle}>Productos en venta</h2>
         {productsLoading ? (
           <p className="text-fg-muted py-8 text-center">Cargando productos...</p>

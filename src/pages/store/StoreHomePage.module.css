@@ -4,37 +4,173 @@
   gap: 32px;
 }
 
-/* ─── Hero ───────────────────────────── */
+/* ─── Hero (categoría de tienda real) ─── */
 .hero {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 12px;
-  padding: 48px 24px;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  gap: 14px;
+  padding: 56px 24px 44px;
   border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(
+    135deg,
+    var(--accent) 0%,
+    color-mix(in srgb, var(--accent) 70%, #000) 100%
+  );
+  color: #fff;
 }
 
-.heroIcon {
-  color: var(--accent);
+.heroBg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.floatIcon {
+  position: absolute;
+  color: rgba(255, 255, 255, 0.1);
+}
+
+.floatIcon1 {
+  top: -24px;
+  right: -8px;
+  transform: rotate(15deg);
+}
+
+.floatIcon2 {
+  bottom: -30px;
+  left: -10px;
+  transform: rotate(-10deg);
+}
+
+.floatIcon3 {
+  top: 40%;
+  left: 14%;
+  opacity: 0.7;
+}
+
+.heroEyebrow {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .heroTitle {
+  position: relative;
   margin: 0;
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--text-h);
+  max-width: 660px;
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1.15;
+  color: #fff;
+}
+
+.heroHighlight {
+  background: rgba(255, 255, 255, 0.18);
+  padding: 0 8px;
+  border-radius: 8px;
 }
 
 .heroSubtitle {
+  position: relative;
   margin: 0;
   max-width: 560px;
   font-size: 15px;
   line-height: 1.6;
-  color: var(--text);
-  opacity: 0.8;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.heroCtas {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.heroCtaPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: 10px;
+  border: none;
+  background: #fff;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.heroCtaPrimary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.heroCtaGhost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: transparent;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.heroCtaGhost:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.heroStats {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 10px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.heroStats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.heroStats strong {
+  font-size: 15px;
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .hero {
+    padding: 40px 20px 36px;
+  }
+
+  .heroTitle {
+    font-size: 28px;
+  }
 }
 
 /* ─── Grid de productos ──────────────── */

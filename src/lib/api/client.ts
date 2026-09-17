@@ -117,6 +117,18 @@ const defaultConfig: ClientConfig = {
 
 let config = { ...defaultConfig };
 
+// ─── Helper: sesión activa ─────────────────────────────────
+/**
+ * Indica si la petición podía llevar sesión (token en memoria o persistido).
+ *
+ * Un 401 solo es "sesión expirada" cuando la request enviaba un token.
+ * En endpoints públicos (login, register), un 401 es credenciales
+ * inválidas y NO debe disparar refresh ni logout (que recargan la página).
+ */
+function hasSessionToken(): boolean {
+  return Boolean(accessToken) || Boolean(authStorage.getToken(true) || authStorage.getToken(false));
+}
+
 // ─── Helper: Mapear status HTTP a ApiErrorCode ─────────────
 function mapStatusToErrorCode(status: number): ApiErrorCode {
   switch (status) {
@@ -268,8 +280,10 @@ async function request<T>(
 
     // Manejar códigos de error HTTP específicos
     if (!response.ok) {
-      // 401: Sesión expirada → intentar refresh y reintentar
-      if (response.status === 401) {
+      // 401: Sesión expirada → intentar refresh y reintentar.
+      // Solo si la petición tenía sesión: en endpoints públicos un 401
+      // es credenciales inválidas y no debe desloguear/recargar.
+      if (response.status === 401 && hasSessionToken()) {
         const isRetry = options?.headers && '_retry' in options.headers;
 
         if (!isRetry) {
@@ -315,8 +329,9 @@ async function request<T>(
   // Si la respuesta NO tiene la estructura ApiResponse, adaptarla
   // Esto es para compatibilidad con backends que no siguen el contrato
   if (!response.ok) {
-    // 401: Sesión expirada → intentar refresh y reintentar
-    if (response.status === 401) {
+    // 401: Sesión expirada → intentar refresh y reintentar.
+    // Solo si la petición tenía sesión (ver hasSessionToken).
+    if (response.status === 401 && hasSessionToken()) {
       const isRetry = options?.headers && '_retry' in options.headers;
 
       if (!isRetry) {

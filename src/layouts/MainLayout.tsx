@@ -161,7 +161,7 @@ function AppNavItems() {
               active={isActive('/admin/permisos')}
             />
           </Can>
-          <Can anyOf={['audit.read', 'audit.read-mine']}>
+          <Can privilege="audit.read">
             <NavItem
               as={NavLink}
               to="/admin/auditoria"
@@ -245,7 +245,7 @@ export default function MainLayout() {
     <div style={{ display: 'flex', height: '100vh' }}>
       <Sidebar>
         <Sidebar.Header>
-          <SidebarLogo src="/logo.svg" name="TiendaRifas" />
+          <SidebarLogo src="/logo.svg" name="NUVORA" />
           <UserAvatar name={userName} role={userRole} photoUrl={userPhoto} />
           <UserClock />
         </Sidebar.Header>

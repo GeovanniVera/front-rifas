@@ -100,6 +100,34 @@ describe('HTTP Client — Refresh Token Flow', () => {
     window.removeEventListener('auth:logout', logoutHandler)
   })
 
+  it('does not logout on 401 without a session (public endpoint like login)', async () => {
+    const logoutHandler = vi.fn()
+    window.addEventListener('auth:logout', logoutHandler)
+
+    server.use(
+      http.post('/api/auth/login', () => {
+        return HttpResponse.json(
+          { success: false, message: 'Credenciales incorrectas', code: 'UNAUTHORIZED' },
+          { status: 401 }
+        )
+      })
+    )
+
+    // Sin sesión: ni token en memoria ni en storage → el 401 es credenciales
+    // inválidas, no sesión expirada. No debe desloguear ni recargar.
+    const response = await client.post('/auth/login', { email: 'a@b.com', password: 'wrong' })
+
+    expect(response.success).toBe(false)
+    if (!response.success) {
+      expect(response.code).toBe('UNAUTHORIZED')
+      expect(response.message).toBe('Credenciales incorrectas')
+    }
+    expect(logoutHandler).not.toHaveBeenCalled()
+    expect(tokenManager.get()).toBeNull()
+
+    window.removeEventListener('auth:logout', logoutHandler)
+  })
+
   it('does not retry if already retried (prevents infinite loop)', async () => {
     let callCount = 0
 

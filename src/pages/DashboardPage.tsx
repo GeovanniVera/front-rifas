@@ -33,7 +33,6 @@ export default function DashboardPage() {
       title: 'Productos',
       desc: 'Gestioná el catálogo de productos de la tienda.',
       privilege: 'products.read',
-      accent: '#6366f1',
     },
     {
       to: '/admin/rifas',
@@ -41,7 +40,6 @@ export default function DashboardPage() {
       title: 'Rifas',
       desc: 'Creá rifas y gestioná sus estados.',
       privilege: 'raffles.read',
-      accent: '#10b981',
     },
     {
       to: '/admin',
@@ -49,7 +47,6 @@ export default function DashboardPage() {
       title: 'Gestión de usuarios',
       desc: 'Usuarios, roles, permisos y auditoría.',
       privilege: 'users.read',
-      accent: '#f59e0b',
     },
     {
       to: '/ajustes',
@@ -57,7 +54,6 @@ export default function DashboardPage() {
       title: 'Ajustes',
       desc: 'Perfil, actividad y configuración.',
       privilege: null,
-      accent: '#64748b',
     },
   ];
 
@@ -118,8 +114,8 @@ export default function DashboardPage() {
                           width: 40,
                           height: 40,
                           borderRadius: 10,
-                          background: `${action.accent}12`,
-                          color: action.accent,
+                          background: 'var(--accent-bg)',
+                          color: 'var(--accent)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',

@@ -31,6 +31,20 @@ export function useRafflesAdmin() {
   })
 }
 
+export function useRaffle(id: string) {
+  return useQuery({
+    queryKey: ['store', 'raffles', id],
+    queryFn: async () => {
+      const response = await raffleService.get(id)
+      if (!response.success || !response.data) {
+        throw new Error(response.message || 'Error al obtener rifa')
+      }
+      return response.data
+    },
+    enabled: !!id,
+  })
+}
+
 export function useCreateRaffle() {
   const queryClient = useQueryClient()
 

@@ -37,6 +37,7 @@ const MiActividadPage = lazy(() => import('./pages/ajustes/MiActividadPage'));
 // Store pages (lazy)
 const StoreHomePage = lazy(() => import('./pages/store/StoreHomePage'));
 const ProductDetailPage = lazy(() => import('./pages/store/ProductDetailPage'));
+const RaffleDetailPage = lazy(() => import('./pages/store/RaffleDetailPage'));
 const AdminProductsPage = lazy(() => import('./pages/admin/AdminProductsPage'));
 const AdminRafflesPage = lazy(() => import('./pages/admin/AdminRafflesPage'));
 
@@ -107,6 +108,7 @@ function App() {
             <Route element={<StoreLayout />}>
               <Route path="/" element={<StoreHomePage />} />
               <Route path="/producto/:id" element={<ProductDetailPage />} />
+              <Route path="/rifa/:id" element={<RaffleDetailPage />} />
             </Route>
 
             {/* Protected routes — MainLayout */}
@@ -169,7 +171,7 @@ function App() {
               <Route
                 path="/admin/auditoria"
                 element={
-                  <RequirePrivilege anyOf={['audit.read', 'audit.read-mine']}>
+                  <RequirePrivilege privilege="audit.read">
                     <AuditLogsPage />
                   </RequirePrivilege>
                 }

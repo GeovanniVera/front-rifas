@@ -52,8 +52,8 @@ export default function AuthLayout() {
         {/* Branding centrado sobre el hero */}
         <div className={styles.heroContent}>
           <Link to="/" className={styles.heroBrand}>
-            <img src="/logo.svg" alt="TiendaRifas" className={styles.heroLogo} />
-            <span className={styles.heroBrandName}>TiendaRifas</span>
+            <img src="/logo.svg" alt="NUVORA" className={styles.heroLogo} />
+            <span className={styles.heroBrandName}>NUVORA</span>
           </Link>
           <h2 className={styles.heroTitle}>
             Participá en nuestras rifas desde donde estés.
@@ -69,8 +69,8 @@ export default function AuthLayout() {
       <div className={styles.rightPanel}>
         <div className={styles.brandMobile}>
           <Link to="/" className={styles.brandMobileLink}>
-            <img src="/logo.svg" alt="TiendaRifas" className={styles.brandLogoMobile} />
-            <span className={styles.brandNameMobile}>TiendaRifas</span>
+            <img src="/logo.svg" alt="NUVORA" className={styles.brandLogoMobile} />
+            <span className={styles.brandNameMobile}>NUVORA</span>
           </Link>
         </div>
 

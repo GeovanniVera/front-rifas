@@ -6,8 +6,9 @@ import {
   type CreateRoleData,
   type UpdateRoleData,
 } from '../services/role.service';
+import type { UseAdminQueryOptions } from '../../store/hooks/useProducts';
 
-export function useRoles() {
+export function useRoles({ enabled = true }: UseAdminQueryOptions = {}) {
   return useQuery({
     queryKey: ['admin', 'roles'],
     queryFn: async () => {
@@ -17,10 +18,11 @@ export function useRoles() {
       }
       return response.data;
     },
+    enabled,
   });
 }
 
-export function usePermissions() {
+export function usePermissions({ enabled = true }: UseAdminQueryOptions = {}) {
   return useQuery({
     queryKey: ['admin', 'permissions'],
     queryFn: async () => {
@@ -30,6 +32,7 @@ export function usePermissions() {
       }
       return response.data;
     },
+    enabled,
   });
 }
 

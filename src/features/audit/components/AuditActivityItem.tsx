@@ -52,7 +52,7 @@ function ChangesDiff({
 
   return (
     <div className="bg-background border-border-base mt-3 rounded-md border p-3">
-      <p className="text-fg-muted mb-2 text-xs font-semibold uppercase tracking-wide">Cambios</p>
+      <p className="text-fg-muted mb-2 text-xs font-semibold tracking-wide uppercase">Cambios</p>
       <dl className="space-y-1.5">
         {keys.map((key) => {
           const prev = before?.[key];
@@ -101,8 +101,7 @@ export default function AuditActivityItem({ log }: AuditActivityItemProps) {
   if (log.requestId) details.push({ label: 'Request ID', value: log.requestId });
   if (log.actorId) details.push({ label: 'Actor', value: log.actorId });
 
-  const hasDetails =
-    details.length > 0 || Boolean(log.before) || Boolean(log.after);
+  const hasDetails = details.length > 0 || Boolean(log.before) || Boolean(log.after);
 
   return (
     <div className="bg-surface border-border-base overflow-hidden rounded-lg border">
@@ -111,7 +110,7 @@ export default function AuditActivityItem({ log }: AuditActivityItemProps) {
         onClick={() => setExpanded((p) => !p)}
         disabled={!hasDetails}
         aria-expanded={expanded}
-        className="hover:bg-[rgba(0,0,0,0.03)] focus-visible:ring-accent flex w-full items-start gap-3 p-4 text-left transition-colors duration-150 disabled:cursor-default"
+        className="focus-visible:ring-accent flex w-full items-start gap-3 p-4 text-left transition-colors duration-150 hover:bg-[rgba(0,0,0,0.03)] disabled:cursor-default"
       >
         <div
           className={`flex size-9 shrink-0 items-center justify-center rounded-full ${TONE_CLASSES[label.tone]}`}
@@ -138,7 +137,7 @@ export default function AuditActivityItem({ log }: AuditActivityItemProps) {
             <dl className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
               {details.map((row) => (
                 <div key={row.label} className="min-w-0">
-                  <dt className="text-fg-muted text-[11px] font-semibold uppercase tracking-wide">
+                  <dt className="text-fg-muted text-[11px] font-semibold tracking-wide uppercase">
                     {row.label}
                   </dt>
                   <dd className="text-fg text-xs break-words">{row.value}</dd>

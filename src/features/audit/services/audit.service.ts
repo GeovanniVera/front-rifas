@@ -52,7 +52,11 @@ export const auditService = {
    * El backend fija actorId al usuario actual: aquí no se envía actorId
    * deliberadamente, aunque el cliente lo intente.
    */
-  listMine: (page = 0, size = 10, filters?: AuditFilters): Promise<ApiResponse<PaginatedAuditLogs>> => {
+  listMine: (
+    page = 0,
+    size = 10,
+    filters?: AuditFilters,
+  ): Promise<ApiResponse<PaginatedAuditLogs>> => {
     const params = new URLSearchParams({ page: String(page), size: String(size) });
     if (filters?.action) params.set('action', filters.action);
     if (filters?.entityType) params.set('entityType', filters.entityType);

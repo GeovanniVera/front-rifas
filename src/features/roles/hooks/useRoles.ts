@@ -1,11 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  roleService,
-  type Role,
-  type Permission,
-  type CreateRoleData,
-  type UpdateRoleData,
-} from '../services/role.service';
+import { roleService, type CreateRoleData, type UpdateRoleData } from '../services/role.service';
 import type { UseAdminQueryOptions } from '../../store/hooks/useProducts';
 
 export function useRoles({ enabled = true }: UseAdminQueryOptions = {}) {

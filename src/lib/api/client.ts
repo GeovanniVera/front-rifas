@@ -9,7 +9,7 @@
  * definida en src/api/types.ts (ApiResponse<T>).
  */
 
-import type { ApiResponse, ApiError, ApiErrorCode } from './types/api-response';
+import type { ApiResponse, ApiError as ApiErrorResponse, ApiErrorCode } from './types/api-response';
 import { tryRefreshToken } from './interceptors/refresh';
 import { getErrorMessage } from '../i18n/errors';
 import { authStorage } from '../auth/token-store';
@@ -326,12 +326,12 @@ async function request<T>(
         const isSuspended =
           apiResponse &&
           'code' in apiResponse &&
-          (apiResponse as ApiError).code === 'ACCOUNT_SUSPENDED';
+          (apiResponse as ApiErrorResponse).code === 'ACCOUNT_SUSPENDED';
         if (isSuspended) {
           // Cuenta suspendida: limpiar sesión y redirigir a login con mensaje
           tokenManager.clear();
           window.dispatchEvent(new CustomEvent('auth:logout'));
-          const message = (apiResponse as ApiError).message || 'Tu cuenta fue suspendida';
+          const message = (apiResponse as ApiErrorResponse).message || 'Tu cuenta fue suspendida';
           window.location.href = `/login?error=${encodeURIComponent(message)}`;
           return apiResponse;
         }

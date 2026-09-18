@@ -17,7 +17,7 @@ const admin: User = {
   email: 'admin@test.com',
   name: 'Admin User',
   roles: ['admin'],
-  privileges: ['users:read', 'settings:manage'],
+  permissions: ['users:read', 'settings:manage'],
   isVerified: true,
 };
 
@@ -30,9 +30,9 @@ function authValue(overrides: Partial<AuthContextValue> = {}): AuthContextValue 
     isLoading: false,
     login: vi.fn(),
     logout: vi.fn(),
-    hasPrivilege: (privilege) => user?.privileges.includes(privilege) ?? false,
+    hasPrivilege: (privilege) => user?.permissions.includes(privilege) ?? false,
     hasAnyPrivilege: (privileges) =>
-      privileges.some((privilege) => user?.privileges.includes(privilege)),
+      privileges.some((privilege) => user?.permissions.includes(privilege)),
     hasRole: (role) => user?.roles.includes(role) ?? false,
     isVerified: () => user?.isVerified ?? false,
     ...overrides,

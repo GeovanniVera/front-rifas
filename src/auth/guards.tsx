@@ -192,6 +192,50 @@ export function GuestOnly({ children, redirectTo = '/dashboard' }: GuestOnlyProp
   return <>{children}</>;
 }
 
+// ─── RedirectIfVerified ────────────────────────────────────
+/**
+ * Props de RedirectIfVerified.
+ */
+interface RedirectIfVerifiedProps {
+  /** Componentes hijos a renderizar si el email no está verificado */
+  children: ReactNode;
+  /** Ruta de redirección si el email ya está verificado (default: '/dashboard') */
+  redirectTo?: string;
+}
+
+/**
+ * Guard para las rutas de verificación de email.
+ *
+ * A diferencia de GuestOnly, NO expulsa a un usuario autenticado sin verificar:
+ * la condición es exactamente la contraria. Solo redirige cuando el email YA
+ * está verificado y el usuario autenticado, caso en el que la pantalla de
+ * verificación no tiene sentido. Un usuario anónimo o autenticado sin verificar
+ * sigue viendo la pantalla.
+ *
+ * @example
+ * ```tsx
+ * <Route
+ *   path="/verify-email"
+ *   element={
+ *     <RedirectIfVerified>
+ *       <VerifyEmailPage />
+ *     </RedirectIfVerified>
+ *   }
+ * />
+ * ```
+ */
+export function RedirectIfVerified({
+  children,
+  redirectTo = '/dashboard',
+}: RedirectIfVerifiedProps) {
+  const { isAuthenticated, isLoading, isVerified } = useAuth();
+
+  if (isLoading) return <AuthLoading />;
+  if (isAuthenticated && isVerified()) return <Navigate to={redirectTo} replace />;
+
+  return <>{children}</>;
+}
+
 // ─── RequireVerification ──────────────────────────────────
 /**
  * Props de RequireVerification.

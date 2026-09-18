@@ -22,6 +22,30 @@ export const authStorage = {
     }
   },
 
+  /**
+   * Resuelve la sesión activa junto con el storage donde vive.
+   *
+   * Revisa sessionStorage PRIMERO y localStorage después: sessionStorage es
+   * tab-scoped, así que una pestaña que creó una sesión sin "Recuérdeme" nunca
+   * debe ser secuestrada por un token profile-wide que otro login dejó en
+   * localStorage.
+   *
+   * @returns `{ token, remember }` o `null` si no hay sesión en ningún storage
+   */
+  getActiveSession: (): { token: string; remember: boolean } | null => {
+    const sessionToken = authStorage.getToken(false);
+    if (sessionToken) {
+      return { token: sessionToken, remember: false };
+    }
+
+    const localToken = authStorage.getToken(true);
+    if (localToken) {
+      return { token: localToken, remember: true };
+    }
+
+    return null;
+  },
+
   setToken: (token: string, expiresIn?: number, remember: boolean = true): void => {
     try {
       const storage = getStorage(remember);
@@ -67,7 +91,21 @@ export const authStorage = {
     }
   },
 
-  isExpired: (remember: boolean = true): boolean => {
+  /**
+   * Indica si el token activo ya expiró.
+   *
+   * Si `remember` se omite, se resuelve desde la sesión activa. Sin sesión,
+   * devuelve `false` para no refrescar ni limpiar por un token inexistente.
+   *
+   * @param remember - Storage a consultar; si se omite, usa la sesión activa
+   */
+  isExpired: (remember?: boolean): boolean => {
+    if (remember === undefined) {
+      const session = authStorage.getActiveSession();
+      if (!session) return false;
+      remember = session.remember;
+    }
+
     const expiresAt = authStorage.getExpiresAt(remember);
     if (!expiresAt) return false;
     return Date.now() >= expiresAt;

@@ -124,10 +124,8 @@ describe('authStorage', () => {
 
   it('clear removes tokens from specified storage', () => {
     authStorage.setToken('test-token', 3600, true);
-    authStorage.setRefreshToken('refresh-token', true);
     authStorage.clear(true);
     expect(authStorage.getToken(true)).toBeNull();
-    expect(authStorage.getRefreshToken(true)).toBeNull();
     expect(authStorage.getExpiresAt(true)).toBeNull();
   });
 
@@ -137,10 +135,5 @@ describe('authStorage', () => {
     authStorage.clearAll();
     expect(authStorage.getToken(true)).toBeNull();
     expect(authStorage.getToken(false)).toBeNull();
-  });
-
-  it('sets and gets refresh token', () => {
-    authStorage.setRefreshToken('refresh-token', true);
-    expect(authStorage.getRefreshToken(true)).toBe('refresh-token');
   });
 });

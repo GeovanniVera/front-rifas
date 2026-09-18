@@ -5,6 +5,10 @@
  */
 
 const TOKEN_KEY = 'auth_token';
+// LEGACY: el refresh token ahora vive en una cookie HttpOnly del backend, nadie
+// lo escribe en el frontend. La clave se conserva solo para borrarla en
+// clear()/clearAll(): los usuarios que corrieron una release anterior todavía
+// la tienen en su storage y el logout debe eliminarla.
 const REFRESH_TOKEN_KEY = 'auth_refresh_token';
 const EXPIRES_AT_KEY = 'auth_expires_at';
 
@@ -58,22 +62,6 @@ export const authStorage = {
     }
   },
 
-  getRefreshToken: (remember: boolean = true): string | null => {
-    try {
-      return getStorage(remember).getItem(REFRESH_TOKEN_KEY);
-    } catch {
-      return null;
-    }
-  },
-
-  setRefreshToken: (token: string, remember: boolean = true): void => {
-    try {
-      getStorage(remember).setItem(REFRESH_TOKEN_KEY, token);
-    } catch {
-      // ignore
-    }
-  },
-
   getExpiresAt: (remember: boolean = true): number | null => {
     try {
       const val = getStorage(remember).getItem(EXPIRES_AT_KEY);
@@ -115,6 +103,7 @@ export const authStorage = {
     try {
       const storage = getStorage(remember);
       storage.removeItem(TOKEN_KEY);
+      // LEGACY: limpia el refresh token que persistían releases anteriores.
       storage.removeItem(REFRESH_TOKEN_KEY);
       storage.removeItem(EXPIRES_AT_KEY);
     } catch {
@@ -126,6 +115,7 @@ export const authStorage = {
   clearAll: (): void => {
     try {
       localStorage.removeItem(TOKEN_KEY);
+      // LEGACY: limpia el refresh token que persistían releases anteriores.
       localStorage.removeItem(REFRESH_TOKEN_KEY);
       localStorage.removeItem(EXPIRES_AT_KEY);
       sessionStorage.removeItem(TOKEN_KEY);

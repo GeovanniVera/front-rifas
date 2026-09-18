@@ -2,29 +2,28 @@
  * Dashboard page - default landing after login.
  */
 import { useNavigate } from 'react-router';
-import { useAuth } from '../auth';
+import { useAuth, useHasPrivilege } from '../auth';
 import { Can } from '../auth/Can';
 import Badge from '@components/primitives/Badge';
 import Card from '@components/layout/Card';
 import { StatCard, StatCardGroup } from '@components/layout/StatCard';
 import { useProductsAdmin } from '../features/store/hooks/useProducts';
 import { useRafflesAdmin } from '../features/store/hooks/useRaffles';
-import {
-  LuPackage,
-  LuTicket,
-  LuUsers,
-  LuSettings,
-  LuArrowRight,
-} from 'react-icons/lu';
+import { LuPackage, LuTicket, LuUsers, LuSettings, LuArrowRight } from 'react-icons/lu';
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { data: products = [] } = useProductsAdmin();
-  const { data: raffles = [] } = useRafflesAdmin();
+  // Gatear el fetch por privilegio: sin products.read/raffles.read el backend
+  // responde 403 y onForbidden recarga la página. La UI ya oculta las stats,
+  // pero los hooks se llamaban igual y mantenían el loop de peticiones.
+  const canReadProducts = useHasPrivilege('products.read');
+  const canReadRaffles = useHasPrivilege('raffles.read');
+  const { data: products = [] } = useProductsAdmin({ enabled: canReadProducts });
+  const { data: raffles = [] } = useRafflesAdmin({ enabled: canReadRaffles });
 
-  const activeRaffles = raffles.filter((r) => r.status === 'ACTIVE')
-  const ticketsSold = raffles.reduce((sum, r) => sum + r.ticketsSold, 0)
+  const activeRaffles = raffles.filter((r) => r.status === 'ACTIVE');
+  const ticketsSold = raffles.reduce((sum, r) => sum + r.ticketsSold, 0);
 
   const quickActions = [
     {
@@ -84,10 +83,20 @@ export default function DashboardPage() {
             <StatCard value={products.length} label="Productos" icon={LuPackage} accent="#6366f1" />
           </Can>
           <Can privilege="raffles.read">
-            <StatCard value={activeRaffles.length} label="Rifas activas" icon={LuTicket} accent="#10b981" />
+            <StatCard
+              value={activeRaffles.length}
+              label="Rifas activas"
+              icon={LuTicket}
+              accent="#10b981"
+            />
           </Can>
           <Can privilege="raffles.read">
-            <StatCard value={ticketsSold} label="Boletos vendidos" icon={LuTicket} accent="#f59e0b" />
+            <StatCard
+              value={ticketsSold}
+              label="Boletos vendidos"
+              icon={LuTicket}
+              accent="#f59e0b"
+            />
           </Can>
         </StatCardGroup>
 

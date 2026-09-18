@@ -101,6 +101,19 @@ interface ClientConfig {
   onForbidden?: () => void;
 }
 
+/**
+ * Decide si un 403 debe navegar a /403.
+ *
+ * Excluye /login (un 403 ahí significa "cuenta no verificada") y /403 mismo:
+ * si ya estamos en /403, la navegación dura recargaba el documento en cada
+ * 403 y convertía un desajuste de permisos en un loop de recargas.
+ *
+ * @param pathname - Ruta actual; por defecto, la del navegador
+ */
+export function shouldRedirectToForbidden(pathname: string = window.location.pathname): boolean {
+  return !pathname.includes('/login') && pathname !== '/403';
+}
+
 /** Configuración por defecto del cliente */
 const defaultConfig: ClientConfig = {
   baseUrl: API_BASE,
@@ -108,8 +121,7 @@ const defaultConfig: ClientConfig = {
     window.location.href = '/login';
   },
   onForbidden: () => {
-    // No redirigir a /403 desde login (403 = "Cuenta no verificada")
-    if (!window.location.pathname.includes('/login')) {
+    if (shouldRedirectToForbidden()) {
       window.location.href = '/403';
     }
   },
@@ -124,9 +136,13 @@ let config = { ...defaultConfig };
  * Un 401 solo es "sesión expirada" cuando la request enviaba un token.
  * En endpoints públicos (login, register), un 401 es credenciales
  * inválidas y NO debe disparar refresh ni logout (que recargan la página).
+ *
+ * La procedencia del token se resuelve a través de la sesión activa
+ * (sessionStorage primero): si hay token en cualquier storage, la request
+ * podía llevar sesión. El resultado es el mismo que consultar ambos storages.
  */
 function hasSessionToken(): boolean {
-  return Boolean(accessToken) || Boolean(authStorage.getToken(true) || authStorage.getToken(false));
+  return Boolean(accessToken) || authStorage.getActiveSession() !== null;
 }
 
 // ─── Helper: Mapear status HTTP a ApiErrorCode ─────────────

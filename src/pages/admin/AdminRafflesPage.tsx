@@ -1,84 +1,94 @@
-import { useState } from 'react'
+import { useState } from 'react';
 import {
   useRafflesAdmin,
   useCreateRaffle,
   useChangeRaffleStatus,
   useDeleteRaffle,
-} from '../../features/store/hooks/useRaffles'
-import { useProductsAdmin } from '../../features/store/hooks/useProducts'
-import ResponsiveTable from '@components/data-display/table/ResponsiveTable'
-import Button from '@components/primitives/Button'
-import Input from '@components/primitives/Input'
-import Badge from '@components/primitives/Badge'
-import { Drawer } from '@components/overlays/Drawer'
-import { ConfirmDialog } from '@components/overlays/ConfirmDialog'
-import { useToast } from '@components/feedback'
-import { Can } from '../../auth/Can'
-import type { Raffle, RaffleStatus } from '../../features/store/services/raffles.service'
-import { LuPlus, LuTrash2 } from 'react-icons/lu'
+} from '../../features/store/hooks/useRaffles';
+import { useProductsAdmin } from '../../features/store/hooks/useProducts';
+import ResponsiveTable from '@components/data-display/table/ResponsiveTable';
+import Button from '@components/primitives/Button';
+import Input from '@components/primitives/Input';
+import Badge from '@components/primitives/Badge';
+import { Drawer } from '@components/overlays/Drawer';
+import { ConfirmDialog } from '@components/overlays/ConfirmDialog';
+import { useToast } from '@components/feedback';
+import { Can } from '../../auth/Can';
+import { useHasPrivilege } from '../../auth/hooks';
+import type { Raffle, RaffleStatus } from '../../features/store/services/raffles.service';
+import { LuPlus, LuTrash2 } from 'react-icons/lu';
 
-const STATUS_LABEL: Record<RaffleStatus, { label: string; variant: 'success' | 'warning' | 'info' | 'danger' }> = {
+const STATUS_LABEL: Record<
+  RaffleStatus,
+  { label: string; variant: 'success' | 'warning' | 'info' | 'danger' }
+> = {
   ACTIVE: { label: 'Activa', variant: 'success' },
   DRAW: { label: 'Sorteo', variant: 'warning' },
   FINISHED: { label: 'Finalizada', variant: 'info' },
   CANCELLED: { label: 'Cancelada', variant: 'danger' },
-}
+};
 
 export default function AdminRafflesPage() {
-  const toast = useToast()
-  const { data: raffles = [], isLoading } = useRafflesAdmin()
-  const { data: products = [] } = useProductsAdmin()
-  const createRaffle = useCreateRaffle()
-  const changeStatus = useChangeRaffleStatus()
-  const deleteRaffle = useDeleteRaffle()
+  const toast = useToast();
+  // La ruta solo exige raffles.read: el fetch de productos se gatea aparte
+  // para no pedir /admin/products (403) cuando falta products.read.
+  const canReadProducts = useHasPrivilege('products.read');
+  const canReadRaffles = useHasPrivilege('raffles.read');
+  const { data: raffles = [], isLoading } = useRafflesAdmin({ enabled: canReadRaffles });
+  const { data: products = [] } = useProductsAdmin({ enabled: canReadProducts });
+  const createRaffle = useCreateRaffle();
+  const changeStatus = useChangeRaffleStatus();
+  const deleteRaffle = useDeleteRaffle();
 
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [form, setForm] = useState({ productId: '', marginPercent: 7, ticketCount: 100 })
-  const [deleting, setDeleting] = useState<Raffle | null>(null)
-  const [statusAction, setStatusAction] = useState<{ raffle: Raffle; status: RaffleStatus } | null>(null)
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [form, setForm] = useState({ productId: '', marginPercent: 7, ticketCount: 100 });
+  const [deleting, setDeleting] = useState<Raffle | null>(null);
+  const [statusAction, setStatusAction] = useState<{ raffle: Raffle; status: RaffleStatus } | null>(
+    null,
+  );
 
-  const availableProducts = products.filter((p) => p.stock > 0)
+  const availableProducts = products.filter((p) => p.stock > 0);
 
   const openCreate = () => {
-    setForm({ productId: availableProducts[0]?.id ?? '', marginPercent: 7, ticketCount: 100 })
-    setDrawerOpen(true)
-  }
+    setForm({ productId: availableProducts[0]?.id ?? '', marginPercent: 7, ticketCount: 100 });
+    setDrawerOpen(true);
+  };
 
   const handleCreate = async () => {
     if (!form.productId) {
-      toast.error('Seleccioná un producto')
-      return
+      toast.error('Seleccioná un producto');
+      return;
     }
     try {
-      await createRaffle.mutateAsync(form)
-      toast.success('Rifa creada — el producto se apartó del stock')
-      setDrawerOpen(false)
+      await createRaffle.mutateAsync(form);
+      toast.success('Rifa creada — el producto se apartó del stock');
+      setDrawerOpen(false);
     } catch {
-      toast.error('Error al crear la rifa')
+      toast.error('Error al crear la rifa');
     }
-  }
+  };
 
   const handleStatus = async () => {
-    if (!statusAction) return
+    if (!statusAction) return;
     try {
-      await changeStatus.mutateAsync({ id: statusAction.raffle.id, status: statusAction.status })
-      toast.success(`Rifa marcada como ${STATUS_LABEL[statusAction.status].label}`)
-      setStatusAction(null)
+      await changeStatus.mutateAsync({ id: statusAction.raffle.id, status: statusAction.status });
+      toast.success(`Rifa marcada como ${STATUS_LABEL[statusAction.status].label}`);
+      setStatusAction(null);
     } catch {
-      toast.error('Error al cambiar el estado')
+      toast.error('Error al cambiar el estado');
     }
-  }
+  };
 
   const handleDelete = async () => {
-    if (!deleting) return
+    if (!deleting) return;
     try {
-      await deleteRaffle.mutateAsync(deleting.id)
-      toast.success('Rifa eliminada')
-      setDeleting(null)
+      await deleteRaffle.mutateAsync(deleting.id);
+      toast.success('Rifa eliminada');
+      setDeleting(null);
     } catch {
-      toast.error('Error al eliminar la rifa')
+      toast.error('Error al eliminar la rifa');
     }
-  }
+  };
 
   const columns = [
     {
@@ -104,14 +114,14 @@ export default function AdminRafflesPage() {
       header: 'Vendidos',
       minWidth: '80px',
       render: (value: unknown, row: Raffle) => {
-        const sold = Number(value ?? 0)
-        const total = row.ticketCount
-        const pct = total > 0 ? Math.round((sold / total) * 100) : 0
+        const sold = Number(value ?? 0);
+        const total = row.ticketCount;
+        const pct = total > 0 ? Math.round((sold / total) * 100) : 0;
         return (
           <span className={sold > 0 ? 'text-accent' : 'text-fg-muted'}>
             {sold} ({pct}%)
           </span>
-        )
+        );
       },
     },
     {
@@ -133,8 +143,8 @@ export default function AdminRafflesPage() {
       filterType: 'select' as const,
       filterOptions: ['ACTIVE', 'DRAW', 'FINISHED', 'CANCELLED'],
       render: (value: unknown) => {
-        const cfg = STATUS_LABEL[value as RaffleStatus]
-        return <Badge variant={cfg.variant}>{cfg.label}</Badge>
+        const cfg = STATUS_LABEL[value as RaffleStatus];
+        return <Badge variant={cfg.variant}>{cfg.label}</Badge>;
       },
     },
     {
@@ -149,7 +159,10 @@ export default function AdminRafflesPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={(e) => { e.stopPropagation(); setStatusAction({ raffle: row, status: 'DRAW' }) }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setStatusAction({ raffle: row, status: 'DRAW' });
+                }}
               >
                 Sorteo
               </Button>
@@ -158,16 +171,22 @@ export default function AdminRafflesPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={(e) => { e.stopPropagation(); setStatusAction({ raffle: row, status: 'FINISHED' }) }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setStatusAction({ raffle: row, status: 'FINISHED' });
+                }}
               >
                 Finalizar
               </Button>
             )}
-            {(row.status === 'ACTIVE' && row.ticketsSold === 0) && (
+            {row.status === 'ACTIVE' && row.ticketsSold === 0 && (
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={(e) => { e.stopPropagation(); setStatusAction({ raffle: row, status: 'CANCELLED' }) }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setStatusAction({ raffle: row, status: 'CANCELLED' });
+                }}
                 className="text-warning hover:text-warning-strong"
               >
                 Cancelar
@@ -176,7 +195,10 @@ export default function AdminRafflesPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={(e) => { e.stopPropagation(); setDeleting(row) }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setDeleting(row);
+              }}
               className="text-danger hover:text-danger-strong"
               title="Eliminar"
             >
@@ -186,19 +208,19 @@ export default function AdminRafflesPage() {
         </div>
       ),
     },
-  ]
+  ];
 
   // Preview del precio por boleto
-  const selectedProduct = products.find((p) => p.id === form.productId)
-  const previewTotal = selectedProduct ? selectedProduct.price * (1 + form.marginPercent / 100) : 0
-  const previewPrice = form.ticketCount > 0 ? previewTotal / form.ticketCount : 0
+  const selectedProduct = products.find((p) => p.id === form.productId);
+  const previewTotal = selectedProduct ? selectedProduct.price * (1 + form.marginPercent / 100) : 0;
+  const previewPrice = form.ticketCount > 0 ? previewTotal / form.ticketCount : 0;
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <p className="text-fg-muted">Cargando rifas...</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -210,7 +232,11 @@ export default function AdminRafflesPage() {
             <p className="text-fg-muted text-sm">{raffles.length} rifas</p>
           </div>
           <Can privilege="raffles.write">
-            <Button variant="primary" onClick={openCreate} disabled={availableProducts.length === 0}>
+            <Button
+              variant="primary"
+              onClick={openCreate}
+              disabled={availableProducts.length === 0}
+            >
               <LuPlus size={16} className="mr-1" />
               Crear rifa
             </Button>
@@ -239,7 +265,7 @@ export default function AdminRafflesPage() {
               <select
                 value={form.productId}
                 onChange={(e) => setForm({ ...form, productId: e.target.value })}
-                className="w-full rounded-md border border-border-base bg-background px-3 py-2 text-sm text-fg"
+                className="border-border-base bg-background text-fg w-full rounded-md border px-3 py-2 text-sm"
               >
                 {availableProducts.length === 0 && (
                   <option value="">No hay productos con stock</option>
@@ -263,7 +289,9 @@ export default function AdminRafflesPage() {
               </p>
             </div>
             <div>
-              <label className="text-fg mb-1.5 block text-sm font-medium">Cantidad de boletos</label>
+              <label className="text-fg mb-1.5 block text-sm font-medium">
+                Cantidad de boletos
+              </label>
               <Input
                 type="number"
                 value={String(form.ticketCount)}
@@ -271,7 +299,7 @@ export default function AdminRafflesPage() {
               />
             </div>
             {selectedProduct && (
-              <div className="bg-surface rounded-md border border-border-base p-3 text-sm">
+              <div className="bg-surface border-border-base rounded-md border p-3 text-sm">
                 <p className="text-fg">
                   Precio producto: <strong>${selectedProduct.price.toLocaleString('es-MX')}</strong>
                 </p>
@@ -280,14 +308,17 @@ export default function AdminRafflesPage() {
                   <strong>${Math.round(previewTotal).toLocaleString('es-MX')}</strong>
                 </p>
                 <p className="text-accent mt-1">
-                  Precio por boleto: <strong>${Math.ceil(previewPrice).toLocaleString('es-MX')}</strong>
+                  Precio por boleto:{' '}
+                  <strong>${Math.ceil(previewPrice).toLocaleString('es-MX')}</strong>
                 </p>
               </div>
             )}
           </div>
         </Drawer.Body>
         <Drawer.Footer>
-          <Button variant="secondary" onClick={() => setDrawerOpen(false)}>Cancelar</Button>
+          <Button variant="secondary" onClick={() => setDrawerOpen(false)}>
+            Cancelar
+          </Button>
           <Button variant="primary" onClick={handleCreate} disabled={createRaffle.isPending}>
             Crear rifa
           </Button>
@@ -320,5 +351,5 @@ export default function AdminRafflesPage() {
         />
       )}
     </div>
-  )
+  );
 }

@@ -1,17 +1,25 @@
-import { useNavigate } from 'react-router'
-import { useProductsAvailable } from '../../features/store/hooks/useProducts'
-import { useRafflesActive } from '../../features/store/hooks/useRaffles'
-import { LuShoppingCart, LuTicket, LuPackage, LuSparkles, LuArrowRight, LuShieldCheck } from 'react-icons/lu'
-import styles from './StoreHomePage.module.css'
+import { useNavigate } from 'react-router';
+import { useProductsAvailable } from '../../features/store/hooks/useProducts';
+import { useRafflesActive } from '../../features/store/hooks/useRaffles';
+import {
+  LuShoppingCart,
+  LuTicket,
+  LuPackage,
+  LuSparkles,
+  LuArrowRight,
+  LuShieldCheck,
+} from 'react-icons/lu';
+import styles from './StoreHomePage.module.css';
+import { formatCurrency } from '@config/constants';
 
 export default function StoreHomePage() {
-  const navigate = useNavigate()
-  const { data: products = [], isLoading: productsLoading } = useProductsAvailable()
-  const { data: raffles = [], isLoading: rafflesLoading } = useRafflesActive()
+  const navigate = useNavigate();
+  const { data: products = [], isLoading: productsLoading } = useProductsAvailable();
+  const { data: raffles = [], isLoading: rafflesLoading } = useRafflesActive();
 
   const scrollToSection = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
-  }
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   return (
     <div className={styles.page}>
@@ -35,16 +43,22 @@ export default function StoreHomePage() {
           que querés
         </h1>
         <p className={styles.heroSubtitle}>
-          Comprá componentes de tecnología al mejor precio, o participá en nuestras rifas
-          para llevarte un producto por una fracción de su valor.
+          Comprá componentes de tecnología al mejor precio, o participá en nuestras rifas para
+          llevarte un producto por una fracción de su valor.
         </p>
 
         <div className={styles.heroCtas}>
-          <button className={styles.heroCtaPrimary} onClick={() => scrollToSection('seccion-rifas')}>
+          <button
+            className={styles.heroCtaPrimary}
+            onClick={() => scrollToSection('seccion-rifas')}
+          >
             Explorar rifas
             <LuArrowRight size={16} />
           </button>
-          <button className={styles.heroCtaGhost} onClick={() => scrollToSection('seccion-productos')}>
+          <button
+            className={styles.heroCtaGhost}
+            onClick={() => scrollToSection('seccion-productos')}
+          >
             Ver productos
           </button>
         </div>
@@ -81,8 +95,8 @@ export default function StoreHomePage() {
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault()
-                    navigate(`/rifa/${raffle.id}`)
+                    e.preventDefault();
+                    navigate(`/rifa/${raffle.id}`);
                   }
                 }}
               >
@@ -92,20 +106,21 @@ export default function StoreHomePage() {
                     alt={raffle.name}
                     className={styles.image}
                     onError={(e) => {
-                      ;(e.target as HTMLImageElement).style.display = 'none'
-                      ;(e.target as HTMLImageElement).parentElement!.classList.add(styles.imageFallback)
+                      (e.target as HTMLImageElement).style.display = 'none';
+                      (e.target as HTMLImageElement).parentElement!.classList.add(
+                        styles.imageFallback,
+                      );
                     }}
                   />
                   <span className={styles.badge}>Rifa</span>
                 </div>
                 <div className={styles.cardBody}>
                   <h3 className={styles.cardTitle}>{raffle.name}</h3>
-                  <p className={styles.cardDesc}>
-                    {raffle.ticketCount} boletos · margen {raffle.marginPercent}%
-                  </p>
+                  <p className={styles.cardDesc}>{raffle.ticketCount} boletos emitidos</p>
                   <div className={styles.cardFooter}>
                     <span className={styles.price}>
-                      ${raffle.ticketPrice.toLocaleString('es-MX')}
+                      {formatCurrency(raffle.ticketPrice)}{' '}
+                      <small className="text-fg-muted text-xs">/boleto</small>
                     </span>
                     <span className={styles.buyBtn}>
                       <LuTicket size={16} />
@@ -137,8 +152,8 @@ export default function StoreHomePage() {
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault()
-                    navigate(`/producto/${product.id}`)
+                    e.preventDefault();
+                    navigate(`/producto/${product.id}`);
                   }
                 }}
               >
@@ -148,8 +163,10 @@ export default function StoreHomePage() {
                     alt={product.name}
                     className={styles.image}
                     onError={(e) => {
-                      ;(e.target as HTMLImageElement).style.display = 'none'
-                      ;(e.target as HTMLImageElement).parentElement!.classList.add(styles.imageFallback)
+                      (e.target as HTMLImageElement).style.display = 'none';
+                      (e.target as HTMLImageElement).parentElement!.classList.add(
+                        styles.imageFallback,
+                      );
                     }}
                   />
                   <span className={styles.badge}>{product.category}</span>
@@ -171,5 +188,5 @@ export default function StoreHomePage() {
         )}
       </section>
     </div>
-  )
+  );
 }

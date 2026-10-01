@@ -8,7 +8,6 @@ import {
 import { useProductsAdmin } from '../../features/store/hooks/useProducts';
 import ResponsiveTable from '@components/data-display/table/ResponsiveTable';
 import Button from '@components/primitives/Button';
-import Input from '@components/primitives/Input';
 import Badge from '@components/primitives/Badge';
 import { Drawer } from '@components/overlays/Drawer';
 import { ConfirmDialog } from '@components/overlays/ConfirmDialog';
@@ -16,6 +15,7 @@ import { useToast } from '@components/feedback';
 import { Can } from '../../auth/Can';
 import { useHasPrivilege } from '../../auth/hooks';
 import type { Raffle, RaffleStatus } from '../../features/store/services/raffles.service';
+import { RAFFLE_CONFIG, formatCurrency } from '../../config/constants';
 import { LuPlus, LuTrash2 } from 'react-icons/lu';
 
 const STATUS_LABEL: Record<
@@ -30,8 +30,6 @@ const STATUS_LABEL: Record<
 
 export default function AdminRafflesPage() {
   const toast = useToast();
-  // La ruta solo exige raffles.read: el fetch de productos se gatea aparte
-  // para no pedir /admin/products (403) cuando falta products.read.
   const canReadProducts = useHasPrivilege('products.read');
   const canReadRaffles = useHasPrivilege('raffles.read');
   const { data: raffles = [], isLoading } = useRafflesAdmin({ enabled: canReadRaffles });
@@ -41,7 +39,7 @@ export default function AdminRafflesPage() {
   const deleteRaffle = useDeleteRaffle();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [form, setForm] = useState({ productId: '', marginPercent: 7, ticketCount: 100 });
+  const [form, setForm] = useState({ productId: '' });
   const [deleting, setDeleting] = useState<Raffle | null>(null);
   const [statusAction, setStatusAction] = useState<{ raffle: Raffle; status: RaffleStatus } | null>(
     null,
@@ -50,7 +48,7 @@ export default function AdminRafflesPage() {
   const availableProducts = products.filter((p) => p.stock > 0);
 
   const openCreate = () => {
-    setForm({ productId: availableProducts[0]?.id ?? '', marginPercent: 7, ticketCount: 100 });
+    setForm({ productId: availableProducts[0]?.id ?? '' });
     setDrawerOpen(true);
   };
 
@@ -128,13 +126,7 @@ export default function AdminRafflesPage() {
       key: 'ticketPrice',
       header: 'Precio/boleto',
       minWidth: '100px',
-      render: (value: unknown) => `$${Number(value).toLocaleString('es-MX')}`,
-    },
-    {
-      key: 'marginPercent',
-      header: 'Margen',
-      minWidth: '80px',
-      render: (value: unknown) => `${value}%`,
+      render: (value: unknown) => formatCurrency(Number(value)),
     },
     {
       key: 'status',
@@ -210,10 +202,13 @@ export default function AdminRafflesPage() {
     },
   ];
 
-  // Preview del precio por boleto
+  // Calculadora visual en tiempo real
   const selectedProduct = products.find((p) => p.id === form.productId);
-  const previewTotal = selectedProduct ? selectedProduct.price * (1 + form.marginPercent / 100) : 0;
-  const previewPrice = form.ticketCount > 0 ? previewTotal / form.ticketCount : 0;
+  const cost = selectedProduct ? selectedProduct.price : 0;
+  const previewTicketPrice = Math.round(cost * RAFFLE_CONFIG.TICKET_RATE);
+  const previewTotalTickets = RAFFLE_CONFIG.TOTAL_TICKETS;
+  const previewTotalRevenue = previewTicketPrice * previewTotalTickets;
+  const previewProfit = previewTotalRevenue - cost;
 
   if (isLoading) {
     return (
@@ -257,14 +252,14 @@ export default function AdminRafflesPage() {
 
       {/* Drawer crear rifa */}
       <Drawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)}>
-        <Drawer.Header title="Crear rifa" />
+        <Drawer.Header title="Crear rifa (Regla RN-RIFA-001)" />
         <Drawer.Body>
           <div className="space-y-4">
             <div>
               <label className="text-fg mb-1.5 block text-sm font-medium">Producto a rifar</label>
               <select
                 value={form.productId}
-                onChange={(e) => setForm({ ...form, productId: e.target.value })}
+                onChange={(e) => setForm({ productId: e.target.value })}
                 className="border-border-base bg-background text-fg w-full rounded-md border px-3 py-2 text-sm"
               >
                 {availableProducts.length === 0 && (
@@ -272,44 +267,34 @@ export default function AdminRafflesPage() {
                 )}
                 {availableProducts.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name} — ${p.price.toLocaleString('es-MX')}
+                    {p.name} — {formatCurrency(p.price)}
                   </option>
                 ))}
               </select>
             </div>
-            <div>
-              <label className="text-fg mb-1.5 block text-sm font-medium">Margen (%)</label>
-              <Input
-                type="number"
-                value={String(form.marginPercent)}
-                onChange={(v) => setForm({ ...form, marginPercent: Number(v) || 0 })}
-              />
-              <p className="text-fg-muted mt-1 text-xs">
-                Porcentaje extra sobre el precio del producto. Default 7%.
-              </p>
-            </div>
-            <div>
-              <label className="text-fg mb-1.5 block text-sm font-medium">
-                Cantidad de boletos
-              </label>
-              <Input
-                type="number"
-                value={String(form.ticketCount)}
-                onChange={(v) => setForm({ ...form, ticketCount: Number(v) || 0 })}
-              />
-            </div>
+
             {selectedProduct && (
-              <div className="bg-surface border-border-base rounded-md border p-3 text-sm">
-                <p className="text-fg">
-                  Precio producto: <strong>${selectedProduct.price.toLocaleString('es-MX')}</strong>
+              <div className="bg-surface border-border-base space-y-2 rounded-md border p-4 text-sm">
+                <p className="text-fg flex justify-between">
+                  <span>Costo base del producto:</span>
+                  <strong>{formatCurrency(cost)}</strong>
                 </p>
-                <p className="text-fg mt-1">
-                  Total a recaudar:{' '}
-                  <strong>${Math.round(previewTotal).toLocaleString('es-MX')}</strong>
+                <p className="text-fg flex justify-between">
+                  <span>Precio por boleto (7%):</span>
+                  <strong className="text-accent">{formatCurrency(previewTicketPrice)}</strong>
                 </p>
-                <p className="text-accent mt-1">
-                  Precio por boleto:{' '}
-                  <strong>${Math.ceil(previewPrice).toLocaleString('es-MX')}</strong>
+                <p className="text-fg flex justify-between">
+                  <span>Boletos a emitir:</span>
+                  <strong>{previewTotalTickets} boletos fijos</strong>
+                </p>
+                <hr className="border-border-base my-2" />
+                <p className="text-fg flex justify-between">
+                  <span>Recaudación estimada:</span>
+                  <strong>{formatCurrency(previewTotalRevenue)}</strong>
+                </p>
+                <p className="text-success flex justify-between font-semibold">
+                  <span>Ganancia neta proyectada:</span>
+                  <span>+{formatCurrency(previewProfit)}</span>
                 </p>
               </div>
             )}
@@ -319,7 +304,11 @@ export default function AdminRafflesPage() {
           <Button variant="secondary" onClick={() => setDrawerOpen(false)}>
             Cancelar
           </Button>
-          <Button variant="primary" onClick={handleCreate} disabled={createRaffle.isPending}>
+          <Button
+            variant="primary"
+            onClick={handleCreate}
+            disabled={createRaffle.isPending || !form.productId}
+          >
             Crear rifa
           </Button>
         </Drawer.Footer>

@@ -1,50 +1,43 @@
-import { client } from '@lib/api/client'
-import type { ApiResponse } from '@lib/api/types/api-response'
+import { client } from '@lib/api/client';
+import type { ApiResponse } from '@lib/api/types/api-response';
 
-export type RaffleStatus = 'ACTIVE' | 'DRAW' | 'FINISHED' | 'CANCELLED'
+export type RaffleStatus = 'ACTIVE' | 'DRAW' | 'FINISHED' | 'CANCELLED';
 
 export interface Raffle {
-  id: string
-  productId: string
-  productName?: string
-  productImageUrl?: string
-  name: string
-  description?: string
-  marginPercent: number
-  ticketCount: number
-  ticketsSold: number
-  ticketPrice: number
-  status: RaffleStatus
-  createdAt?: string
+  id: string;
+  productId: string;
+  productName?: string;
+  productImageUrl?: string;
+  name: string;
+  description?: string;
+  marginPercent: number;
+  ticketCount: number;
+  ticketsSold: number;
+  ticketPrice: number;
+  status: RaffleStatus;
+  createdAt?: string;
 }
 
 export interface CreateRaffleData {
-  productId: string
-  marginPercent: number
-  ticketCount: number
+  productId: string;
 }
 
 export const raffleService = {
   /** Lista rifas activas (tienda pública) */
-  listActive: (): Promise<ApiResponse<Raffle[]>> =>
-    client.get<Raffle[]>('/raffles'),
+  listActive: (): Promise<ApiResponse<Raffle[]>> => client.get<Raffle[]>('/raffles'),
 
   /** Lista todas las rifas (admin) */
-  listAll: (): Promise<ApiResponse<Raffle[]>> =>
-    client.get<Raffle[]>('/admin/raffles'),
+  listAll: (): Promise<ApiResponse<Raffle[]>> => client.get<Raffle[]>('/admin/raffles'),
 
   /** Obtiene una rifa */
-  get: (id: string): Promise<ApiResponse<Raffle>> =>
-    client.get<Raffle>(`/raffles/${id}`),
+  get: (id: string): Promise<ApiResponse<Raffle>> => client.get<Raffle>(`/raffles/${id}`),
 
-  /** Crea rifa desde producto (multipart no — query params) */
+  /** Crea rifa desde producto (Regla RN-RIFA-001: solo requiere productId) */
   create: (data: CreateRaffleData): Promise<ApiResponse<Raffle>> => {
     const params = new URLSearchParams({
       productId: data.productId,
-      marginPercent: String(data.marginPercent),
-      ticketCount: String(data.ticketCount),
-    })
-    return client.post<Raffle>(`/admin/raffles?${params.toString()}`)
+    });
+    return client.post<Raffle>(`/admin/raffles?${params.toString()}`);
   },
 
   /** Cambia estado de rifa */
@@ -52,6 +45,5 @@ export const raffleService = {
     client.patch<Raffle>(`/admin/raffles/${id}/status?status=${status}`),
 
   /** Elimina rifa */
-  delete: (id: string): Promise<ApiResponse<void>> =>
-    client.delete<void>(`/admin/raffles/${id}`),
-}
+  delete: (id: string): Promise<ApiResponse<void>> => client.delete<void>(`/admin/raffles/${id}`),
+};

@@ -1,5 +1,5 @@
-import { Outlet, Link, useNavigate } from 'react-router'
-import { useAuth } from '../auth'
+import { Outlet, Link, useNavigate } from 'react-router';
+import { useAuth } from '../auth';
 import {
   LuLogIn,
   LuUserPlus,
@@ -15,8 +15,8 @@ import {
   LuBadgeCheck,
   LuTruck,
   LuCreditCard,
-} from 'react-icons/lu'
-import styles from './StoreLayout.module.css'
+} from 'react-icons/lu';
+import styles from './StoreLayout.module.css';
 
 /**
  * Layout público de la tienda.
@@ -30,13 +30,13 @@ import styles from './StoreLayout.module.css'
  * sellos de confianza y barra legal inferior.
  */
 export default function StoreLayout() {
-  const { isAuthenticated, isLoading, logout } = useAuth()
-  const navigate = useNavigate()
+  const { isAuthenticated, isLoading, logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await logout()
-    navigate('/')
-  }
+    await logout();
+    navigate('/');
+  };
 
   return (
     <div className={styles.root}>
@@ -90,8 +90,8 @@ export default function StoreLayout() {
                 <img src="/nuvora.png" alt="NUVORA" className={styles.brandLogo} />
               </Link>
               <p className={styles.footerDesc}>
-                Tienda de rifas solidarias y tecnología. Comprá boletos, seguí los sorteos y
-                llevate productos reales por una fracción de su valor.
+                Tienda de rifas solidarias y tecnología. Comprá boletos, seguí los sorteos y llevate
+                productos reales por una fracción de su valor.
               </p>
               <div className={styles.socials}>
                 <a href="#" aria-label="Facebook">
@@ -134,7 +134,7 @@ export default function StoreLayout() {
               <Link to="/terms">Política de privacidad</Link>
               <span>
                 <LuMail size={14} />
-                hola@tiendarifas.com
+                soporte@tiendarifas.com
               </span>
               <span>
                 <LuPhone size={14} />
@@ -177,5 +177,5 @@ export default function StoreLayout() {
         </div>
       </footer>
     </div>
-  )
+  );
 }

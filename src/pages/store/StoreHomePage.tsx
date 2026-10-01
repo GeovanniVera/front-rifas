@@ -134,7 +134,7 @@ export default function StoreHomePage() {
         )}
       </section>
 
-      {/* Productos en venta (backend) */}
+      {/* Productos en venta (backend) 
       <section id="seccion-productos">
         <h2 className={styles.sectionTitle}>Productos en venta</h2>
         {productsLoading ? (
@@ -187,6 +187,7 @@ export default function StoreHomePage() {
           </div>
         )}
       </section>
+      */}
     </div>
   );
 }

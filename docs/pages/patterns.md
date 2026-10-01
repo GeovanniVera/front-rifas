@@ -75,7 +75,6 @@ setTimeout(() => navigate('/login'), 3000);
 
 | Issue | Página | Descripción |
 |-------|--------|-------------|
-| Falta navigate en éxito | VerifyEmailConfirmPage | Dice "Redirigiendo al login..." pero nunca redirige |
 | Typo carácter chino | TermsPage | Sección 8 tiene `"终止"` en medio de texto español |
 
 ### 🟠 Inconsistencias

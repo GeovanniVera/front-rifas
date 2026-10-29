@@ -57,7 +57,7 @@ export function AuthFormActions({
       <button
         type="submit"
         disabled={loading}
-        className="bg-accent hover:bg-accent-hover flex w-full items-center justify-center gap-2 rounded-md px-6 py-3 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-sm disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md"
+        className="bg-accent hover:bg-accent-hover flex w-full items-center justify-center gap-2 rounded-md px-6 py-3 text-sm font-semibold text-white shadow-md transition-[background-color,transform,box-shadow,opacity] duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-sm disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md"
       >
         {loading ? (
           <>
@@ -69,13 +69,13 @@ export function AuthFormActions({
         )}
       </button>
       <p className="text-fg-muted text-center text-sm">
-        {secondaryLabel.split(/(¿.*\?)/g).map((part, i) =>
+        {secondaryLabel.split(/(¿.*\?)/g).map((part) =>
           part.match(/¿.*\?/) ? (
-            <Link key={i} to={secondaryHref} className="text-accent font-medium hover:underline">
+            <Link key={part} to={secondaryHref} className="text-accent font-medium hover:underline">
               {part}
             </Link>
           ) : (
-            <span key={i}>{part}</span>
+            <span key={part}>{part}</span>
           ),
         )}
       </p>

@@ -36,7 +36,8 @@ export function UserRolesDrawer({ isOpen, onClose, user }: UserRolesDrawerProps)
 
   useEffect(() => {
     if (user && isOpen) {
-      const roleIds = roles.filter((r: Role) => user.roles.includes(r.name)).map((r: Role) => r.id);
+      const userRolesSet = new Set(user.roles);
+      const roleIds = roles.filter((r: Role) => userRolesSet.has(r.name)).map((r: Role) => r.id);
       setSelectedRoles(new Set(roleIds));
     }
   }, [user, isOpen, roles]);
@@ -79,7 +80,7 @@ export function UserRolesDrawer({ isOpen, onClose, user }: UserRolesDrawerProps)
   // badges del catálogo mostraría "Sin roles asignados" si no está disponible.
   const currentRoles = (
     <div className="space-y-2">
-      <label className="text-fg-muted text-sm">Roles actuales</label>
+      <span className="text-fg-muted block text-sm">Roles actuales</span>
       <div className="flex flex-wrap gap-1">
         {user.roles.length > 0 ? (
           user.roles.map((roleName) => (
@@ -122,14 +123,14 @@ export function UserRolesDrawer({ isOpen, onClose, user }: UserRolesDrawerProps)
       <Drawer.Body>
         <div className="space-y-4">
           <div>
-            <label className="text-fg-muted text-sm">Email</label>
+            <span className="text-fg-muted block text-sm">Email</span>
             <p className="text-fg text-sm font-medium">{user.email}</p>
           </div>
 
           <Can privilege="roles.assign" fallback={readOnlyView}>
             {isCatalogLoaded ? (
               <div>
-                <label className="text-fg mb-2 block text-sm font-medium">Roles</label>
+                <span className="text-fg mb-2 block text-sm font-medium">Roles</span>
                 <CheckboxSearchList
                   options={roles.map((role: Role) => ({
                     id: role.id,

@@ -46,6 +46,7 @@ export function SelectEditor({ value, options, onChange, onCommit, onCancel }: S
   return (
     <select
       ref={selectRef}
+      aria-label="Editar selección"
       className={SELECT_EDITOR_CLASSES}
       style={SELECT_ARROW_STYLE}
       value={value}
@@ -93,6 +94,9 @@ export function BooleanEditor({ value, onChange, onCommit, onCancel }: BooleanEd
   return (
     <div
       ref={containerRef}
+      role="switch"
+      aria-checked={isActive}
+      aria-label="Alternar valor"
       className={BOOLEAN_EDITOR_CLASSES}
       tabIndex={0}
       onBlur={onCancel}

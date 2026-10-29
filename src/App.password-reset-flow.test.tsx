@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 import { authStorage } from './lib/auth/token-store';
 import './lib/i18n/config';
@@ -21,7 +22,12 @@ function memoryStorage(): Storage {
 }
 
 describe('password reset router flow', () => {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+
   beforeEach(() => {
+    queryClient.clear();
     vi.stubGlobal('localStorage', memoryStorage());
     vi.stubGlobal('sessionStorage', memoryStorage());
     authStorage.clearAll();
@@ -33,9 +39,11 @@ describe('password reset router flow', () => {
 
   it('preserves recovery state across all three routes', async () => {
     render(
-      <MemoryRouter initialEntries={['/forgot-password']}>
-        <App />
-      </MemoryRouter>,
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/forgot-password']}>
+          <App />
+        </MemoryRouter>
+      </QueryClientProvider>,
     );
 
     fireEvent.change(await screen.findByPlaceholderText('tu@email.com'), {

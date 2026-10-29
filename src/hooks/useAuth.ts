@@ -69,33 +69,78 @@ export function useLogout() {
 }
 
 export function useRegister() {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { name: string; email: string; password: string; acceptedTerms: boolean }) =>
-      authService.register(data),
+    mutationFn: async (data: {
+      name: string;
+      email: string;
+      password: string;
+      acceptedTerms: boolean;
+    }) => {
+      const response = await authService.register(data);
+      if (!response.success) {
+        throw new Error(response.message || 'Error al registrarse');
+      }
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth'] });
+    },
   });
 }
 
 export function useForgotPassword() {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (email: string) => authService.forgotPassword(email),
+    mutationFn: async (email: string) => {
+      const response = await authService.forgotPassword(email);
+      if (!response.success) {
+        throw new Error(response.message || 'Error al solicitar recuperación');
+      }
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth'] });
+    },
   });
 }
 
 export function useResetPassword() {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ token, password }: { token: string; password: string }) =>
-      authService.resetPassword(token, password),
+    mutationFn: async ({ token, password }: { token: string; password: string }) => {
+      const response = await authService.resetPassword(token, password);
+      if (!response.success) {
+        throw new Error(response.message || 'Error al restablecer la contraseña');
+      }
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth'] });
+    },
   });
 }
 
 export function useVerifyEmail() {
   return useMutation({
-    mutationFn: (token: string) => authService.verifyEmail(token),
+    mutationFn: async (token: string) => {
+      const response = await authService.verifyEmail(token);
+      if (!response.success) {
+        throw new Error(response.message || 'Error al verificar el email');
+      }
+      return response;
+    },
   });
 }
 
 export function useResendVerification() {
   return useMutation({
-    mutationFn: (email: string) => authService.resendVerification(email),
+    mutationFn: async (email: string) => {
+      const response = await authService.resendVerification(email);
+      if (!response.success) {
+        throw new Error(response.message || 'Error al reenviar verificación');
+      }
+      return response;
+    },
   });
 }

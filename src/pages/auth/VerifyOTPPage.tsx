@@ -4,7 +4,7 @@
  * Segundo paso del flujo: ingresa el código de 6 dígitos.
  * El OTP está ligado a un token para el siguiente paso.
  */
-import { useState, useRef, type KeyboardEvent, type ClipboardEvent } from 'react';
+import { useState, useEffect, useRef, type KeyboardEvent, type ClipboardEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { LuArrowLeft, LuShield } from 'react-icons/lu';
 import { useTranslation } from 'react-i18next';
@@ -22,8 +22,13 @@ export default function VerifyOTPPage() {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Redirigir si no hay email
+  useEffect(() => {
+    if (!email) {
+      navigate('/forgot-password');
+    }
+  }, [email, navigate]);
+
   if (!email) {
-    navigate('/forgot-password');
     return null;
   }
 
@@ -68,17 +73,19 @@ export default function VerifyOTPPage() {
     setLoading(true);
     setError('');
 
-    const result = await verifyOtp(otpString);
+    try {
+      const result = await verifyOtp(otpString);
 
-    if (result.success) {
-      navigate('/reset-password');
-    } else {
-      setError(result.error || 'Código inválido');
-      setOtp(['', '', '', '', '', '']);
-      inputRefs.current[0]?.focus();
+      if (result.success) {
+        navigate('/reset-password');
+      } else {
+        setError(result.error || 'Código inválido');
+        setOtp(['', '', '', '', '', '']);
+        inputRefs.current[0]?.focus();
+      }
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
@@ -120,16 +127,16 @@ export default function VerifyOTPPage() {
 
         {/* OTP Input */}
         <div className="flex justify-center gap-3">
-          {otp.map((digit, index) => (
+          {['otp-0', 'otp-1', 'otp-2', 'otp-3', 'otp-4', 'otp-5'].map((slotId, index) => (
             <input
-              key={index}
+              key={slotId}
               ref={(el) => {
                 inputRefs.current[index] = el;
               }}
               type="text"
               inputMode="numeric"
               maxLength={1}
-              value={digit}
+              value={otp[index]}
               onChange={(e) => handleChange(index, e.target.value)}
               onKeyDown={(e) => handleKeyDown(index, e)}
               onPaste={handlePaste}

@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, useMemo, useCallback, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useMediaQuery } from '@hooks/useMediaQuery';
 import styles from './Sidebar.module.css';
@@ -36,7 +36,8 @@ function SidebarRoot({ children, className = '' }: SidebarRootProps) {
     };
   }, [isMobile, expanded]);
 
-  const toggleExpanded = () => setExpanded((p) => !p);
+  const toggleExpanded = useCallback(() => setExpanded((p) => !p), []);
+  const contextValue = useMemo(() => ({ expanded, toggleExpanded }), [expanded, toggleExpanded]);
 
   const handleLogout = async () => {
     await logout();
@@ -44,7 +45,7 @@ function SidebarRoot({ children, className = '' }: SidebarRootProps) {
   };
 
   return (
-    <SidebarContext.Provider value={{ expanded, toggleExpanded }}>
+    <SidebarContext.Provider value={contextValue}>
       {/* Bottom bar — solo en mobile */}
       {isMobile && (
         <MobileBottomBar

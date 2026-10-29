@@ -45,7 +45,8 @@ async function doRefresh(): Promise<boolean> {
       return invalidate(activeSession);
     }
 
-    const { accessToken, expiresIn } = data.data;
+    const accessToken = data.data.accessToken ?? data.data.token;
+    const expiresIn = data.data.expiresIn;
 
     tokenManager.set(accessToken);
     authStorage.setToken(accessToken, expiresIn, remember);

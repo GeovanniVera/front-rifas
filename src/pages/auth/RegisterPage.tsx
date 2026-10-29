@@ -70,21 +70,26 @@ function RegisterPage() {
         {/* Formulario */}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-1.5">
-            <label className="text-fg block text-sm font-medium">{t('auth.register.name')}</label>
+            <label htmlFor="register-name" className="text-fg block text-sm font-medium">
+              {t('auth.register.name')}
+            </label>
             <Input
+              id="register-name"
               type="text"
               value={name}
               onChange={setName}
               placeholder={t('auth.register.namePlaceholder')}
               startAdornment={<LuUser size={16} />}
               startAdornmentVariant="accent"
-              required
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-fg block text-sm font-medium">{t('auth.register.email')}</label>
+            <label htmlFor="register-email" className="text-fg block text-sm font-medium">
+              {t('auth.register.email')}
+            </label>
             <Input
+              id="register-email"
               type="email"
               value={email}
               onChange={setEmail}
@@ -96,10 +101,11 @@ function RegisterPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-fg block text-sm font-medium">
+            <label htmlFor="register-password" className="text-fg block text-sm font-medium">
               {t('auth.register.password')}
             </label>
             <Input
+              id="register-password"
               type="password"
               value={password}
               onChange={setPassword}
@@ -113,10 +119,11 @@ function RegisterPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-fg block text-sm font-medium">
+            <label htmlFor="register-confirmPassword" className="text-fg block text-sm font-medium">
               {t('auth.register.confirmPassword')}
             </label>
             <Input
+              id="register-confirmPassword"
               type="password"
               value={confirmPassword}
               onChange={setConfirmPassword}

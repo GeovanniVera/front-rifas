@@ -1,4 +1,4 @@
-import { useEffect, useContext } from 'react';
+import { useEffect, useContext, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { LuX } from 'react-icons/lu';
 import type { DrawerProps, ModalHeaderProps, ModalBodyProps, ModalFooterProps } from './types';
@@ -34,15 +34,20 @@ const CLOSE_BTN_CLASSES =
 
 // ─── Drawer Root ──────────────────────────────────────────
 export function Drawer({ isOpen, onClose, children, width = 480, className }: DrawerProps) {
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   // Close on Escape
   useEffect(() => {
     if (!isOpen) return;
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onCloseRef.current();
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -57,6 +62,7 @@ export function Drawer({ isOpen, onClose, children, width = 480, className }: Dr
         <div
           role="dialog"
           aria-modal="true"
+          aria-label="Panel lateral"
           className={`${WINDOW_CLASSES} ${className ?? ''}`}
           style={{ width }}
           onClick={(e) => e.stopPropagation()}

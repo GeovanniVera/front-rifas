@@ -1,6 +1,7 @@
 import { Outlet, Link, useNavigate } from 'react-router';
 import { useAuth } from '../auth';
 import {
+  LuUser,
   LuLogIn,
   LuUserPlus,
   LuLayoutDashboard,
@@ -30,8 +31,13 @@ import styles from './StoreLayout.module.css';
  * sellos de confianza y barra legal inferior.
  */
 export default function StoreLayout() {
-  const { isAuthenticated, isLoading, logout } = useAuth();
+  const { isAuthenticated, isLoading, logout, hasAnyPrivilege, hasRole } = useAuth();
   const navigate = useNavigate();
+
+  const isAdminOrStaff =
+    hasRole('admin') ||
+    hasRole('editor') ||
+    hasAnyPrivilege(['products.read', 'raffles.read', 'users.read']);
 
   const handleLogout = async () => {
     await logout();
@@ -51,8 +57,8 @@ export default function StoreLayout() {
             {isLoading ? null : isAuthenticated ? (
               <>
                 <Link to="/dashboard" className={styles.navBtn}>
-                  <LuLayoutDashboard size={16} />
-                  Ir al dashboard
+                  {isAdminOrStaff ? <LuLayoutDashboard size={16} /> : <LuUser size={16} />}
+                  {isAdminOrStaff ? 'Panel de control' : 'Mi cuenta'}
                 </Link>
                 <button onClick={handleLogout} className={`${styles.navBtn} ${styles.danger}`}>
                   <LuLogOut size={16} />
@@ -113,7 +119,6 @@ export default function StoreLayout() {
             <div className={styles.footerCol}>
               <h4>Tienda</h4>
               <a href="#seccion-rifas">Rifas activas</a>
-              <a href="#seccion-productos">Productos</a>
               <Link to="/login">Ofertas y sorteos</Link>
               <Link to="/">Novedades</Link>
             </div>

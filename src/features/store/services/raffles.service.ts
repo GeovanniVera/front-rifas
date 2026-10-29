@@ -16,10 +16,12 @@ export interface Raffle {
   ticketPrice: number;
   status: RaffleStatus;
   createdAt?: string;
+  drawDate?: string;
 }
 
 export interface CreateRaffleData {
   productId: string;
+  drawDate?: string;
 }
 
 export const raffleService = {
@@ -37,6 +39,9 @@ export const raffleService = {
     const params = new URLSearchParams({
       productId: data.productId,
     });
+    if (data.drawDate) {
+      params.append('drawDate', data.drawDate);
+    }
     return client.post<Raffle>(`/admin/raffles?${params.toString()}`);
   },
 

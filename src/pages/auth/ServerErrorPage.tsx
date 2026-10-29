@@ -78,7 +78,7 @@ export default function ServerErrorPage() {
             {t('common.back')}
           </button>
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/')}
             style={{
               padding: '10px 20px',
               borderRadius: 10,

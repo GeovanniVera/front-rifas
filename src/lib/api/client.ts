@@ -318,6 +318,7 @@ async function request<T>(
         }
 
         tokenManager.clear();
+        authStorage.clearAll();
         window.dispatchEvent(new CustomEvent('auth:logout'));
       }
 
@@ -330,6 +331,7 @@ async function request<T>(
         if (isSuspended) {
           // Cuenta suspendida: limpiar sesión y redirigir a login con mensaje
           tokenManager.clear();
+          authStorage.clearAll();
           window.dispatchEvent(new CustomEvent('auth:logout'));
           const message = (apiResponse as ApiErrorResponse).message || 'Tu cuenta fue suspendida';
           window.location.href = `/login?error=${encodeURIComponent(message)}`;
@@ -366,6 +368,7 @@ async function request<T>(
       }
 
       tokenManager.clear();
+      authStorage.clearAll();
       window.dispatchEvent(new CustomEvent('auth:logout'));
     }
 

@@ -110,10 +110,11 @@ export default function ForgotPasswordPage() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-1.5">
-            <label className="text-fg block text-sm font-medium">
+            <label htmlFor="forgot-email" className="text-fg block text-sm font-medium">
               {t('auth.forgotPassword.email')}
             </label>
             <Input
+              id="forgot-email"
               type="email"
               value={email}
               onChange={setEmailLocal}
@@ -127,7 +128,7 @@ export default function ForgotPasswordPage() {
           <button
             type="submit"
             disabled={forgotPasswordMutation.isPending}
-            className="bg-accent hover:bg-accent-hover flex w-full items-center justify-center gap-2 rounded-md px-6 py-3 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-sm disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md"
+            className="bg-accent hover:bg-accent-hover flex w-full items-center justify-center gap-2 rounded-md px-6 py-3 text-sm font-semibold text-white shadow-md transition-[background-color,transform,box-shadow,opacity] duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-sm disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md"
           >
             {forgotPasswordMutation.isPending ? (
               <>

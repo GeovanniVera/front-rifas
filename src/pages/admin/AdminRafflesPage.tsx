@@ -39,7 +39,7 @@ export default function AdminRafflesPage() {
   const deleteRaffle = useDeleteRaffle();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [form, setForm] = useState({ productId: '' });
+  const [form, setForm] = useState({ productId: '', drawDate: '' });
   const [deleting, setDeleting] = useState<Raffle | null>(null);
   const [statusAction, setStatusAction] = useState<{ raffle: Raffle; status: RaffleStatus } | null>(
     null,
@@ -48,7 +48,7 @@ export default function AdminRafflesPage() {
   const availableProducts = products.filter((p) => p.stock > 0);
 
   const openCreate = () => {
-    setForm({ productId: availableProducts[0]?.id ?? '' });
+    setForm({ productId: availableProducts[0]?.id ?? '', drawDate: '' });
     setDrawerOpen(true);
   };
 
@@ -127,6 +127,28 @@ export default function AdminRafflesPage() {
       header: 'Precio/boleto',
       minWidth: '100px',
       render: (value: unknown) => formatCurrency(Number(value)),
+    },
+    {
+      key: 'drawDate',
+      header: 'Sorteo',
+      minWidth: '140px',
+      render: (value: unknown) => {
+        if (!value) return <span className="text-fg-muted">—</span>;
+        const d = new Date(String(value));
+        return isNaN(d.getTime()) ? (
+          String(value)
+        ) : (
+          <span className="text-xs">
+            {d.toLocaleDateString('es-MX', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </span>
+        );
+      },
     },
     {
       key: 'status',
@@ -256,10 +278,14 @@ export default function AdminRafflesPage() {
         <Drawer.Body>
           <div className="space-y-4">
             <div>
-              <label className="text-fg mb-1.5 block text-sm font-medium">Producto a rifar</label>
+              <label htmlFor="raffle-product" className="text-fg mb-1.5 block text-sm font-medium">
+                Producto a rifar
+              </label>
               <select
+                id="raffle-product"
+                aria-label="Producto a rifar"
                 value={form.productId}
-                onChange={(e) => setForm({ productId: e.target.value })}
+                onChange={(e) => setForm((prev) => ({ ...prev, productId: e.target.value }))}
                 className="border-border-base bg-background text-fg w-full rounded-md border px-3 py-2 text-sm"
               >
                 {availableProducts.length === 0 && (
@@ -271,6 +297,25 @@ export default function AdminRafflesPage() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="raffle-draw-date"
+                className="text-fg mb-1.5 block text-sm font-medium"
+              >
+                Fecha estimada del sorteo
+              </label>
+              <input
+                id="raffle-draw-date"
+                type="datetime-local"
+                value={form.drawDate}
+                onChange={(e) => setForm((prev) => ({ ...prev, drawDate: e.target.value }))}
+                className="border-border-base bg-background text-fg w-full rounded-md border px-3 py-2 text-sm"
+              />
+              <p className="text-fg-muted mt-1 text-xs">
+                Opcional. Fecha y hora en la que se realizará el sorteo.
+              </p>
             </div>
 
             {selectedProduct && (

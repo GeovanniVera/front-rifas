@@ -2,19 +2,20 @@ import { useNavigate } from 'react-router';
 import { useProductsAvailable } from '../../features/store/hooks/useProducts';
 import { useRafflesActive } from '../../features/store/hooks/useRaffles';
 import {
-  LuShoppingCart,
+  // LuShoppingCart,
   LuTicket,
   LuPackage,
   LuSparkles,
   LuArrowRight,
   LuShieldCheck,
+  LuCalendar,
 } from 'react-icons/lu';
 import styles from './StoreHomePage.module.css';
 import { formatCurrency } from '@config/constants';
 
 export default function StoreHomePage() {
   const navigate = useNavigate();
-  const { data: products = [], isLoading: productsLoading } = useProductsAvailable();
+  const { data: products = [] /*, isLoading: productsLoading */ } = useProductsAvailable();
   const { data: raffles = [], isLoading: rafflesLoading } = useRafflesActive();
 
   const scrollToSection = (id: string) => {
@@ -55,12 +56,14 @@ export default function StoreHomePage() {
             Explorar rifas
             <LuArrowRight size={16} />
           </button>
+          {/*
           <button
             className={styles.heroCtaGhost}
             onClick={() => scrollToSection('seccion-productos')}
           >
             Ver productos
           </button>
+          */}
         </div>
 
         <div className={styles.heroStats}>
@@ -87,7 +90,7 @@ export default function StoreHomePage() {
         ) : (
           <div className={styles.grid}>
             {raffles.map((raffle) => (
-              <article
+              <div
                 key={raffle.id}
                 className={`${styles.card} ${styles.raffleCard}`}
                 onClick={() => navigate(`/rifa/${raffle.id}`)}
@@ -117,6 +120,21 @@ export default function StoreHomePage() {
                 <div className={styles.cardBody}>
                   <h3 className={styles.cardTitle}>{raffle.name}</h3>
                   <p className={styles.cardDesc}>{raffle.ticketCount} boletos emitidos</p>
+                  {raffle.drawDate && (
+                    <div className="text-accent flex items-center gap-1.5 text-xs font-medium">
+                      <LuCalendar size={13} className="shrink-0" />
+                      <span>
+                        Sorteo:{' '}
+                        {new Date(raffle.drawDate).toLocaleDateString('es-MX', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                  )}
                   <div className={styles.cardFooter}>
                     <span className={styles.price}>
                       {formatCurrency(raffle.ticketPrice)}{' '}
@@ -124,11 +142,11 @@ export default function StoreHomePage() {
                     </span>
                     <span className={styles.buyBtn}>
                       <LuTicket size={16} />
-                      Participar
+                      Ver detalles
                     </span>
                   </div>
                 </div>
-              </article>
+              </div>
             ))}
           </div>
         )}

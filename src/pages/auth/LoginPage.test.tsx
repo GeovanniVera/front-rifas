@@ -34,7 +34,11 @@ function submitCredentials(email: string, password: string) {
 }
 
 describe('LoginPage', () => {
-  beforeEach(() => navigateMock.mockReset());
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+    navigateMock.mockReset();
+  });
 
   it('renders the login form and recovery links', async () => {
     renderLoginPage();

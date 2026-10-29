@@ -248,8 +248,11 @@ export default function AdminProductsPage() {
         <Drawer.Body>
           <div className="space-y-4">
             <div>
-              <label className="text-fg mb-1.5 block text-sm font-medium">Nombre</label>
+              <label htmlFor="product-name" className="text-fg mb-1.5 block text-sm font-medium">
+                Nombre
+              </label>
               <Input
+                id="product-name"
                 type="text"
                 value={form.name}
                 onChange={(v) => setForm({ ...form, name: v })}
@@ -257,8 +260,14 @@ export default function AdminProductsPage() {
               />
             </div>
             <div>
-              <label className="text-fg mb-1.5 block text-sm font-medium">Descripción</label>
+              <label
+                htmlFor="product-description"
+                className="text-fg mb-1.5 block text-sm font-medium"
+              >
+                Descripción
+              </label>
               <Input
+                id="product-description"
                 type="text"
                 value={form.description}
                 onChange={(v) => setForm({ ...form, description: v })}
@@ -266,8 +275,11 @@ export default function AdminProductsPage() {
               />
             </div>
             <div>
-              <label className="text-fg mb-1.5 block text-sm font-medium">Precio (MXN)</label>
+              <label htmlFor="product-price" className="text-fg mb-1.5 block text-sm font-medium">
+                Precio (MXN)
+              </label>
               <Input
+                id="product-price"
                 type="number"
                 value={form.price}
                 onChange={(v) => setForm({ ...form, price: v })}
@@ -275,16 +287,26 @@ export default function AdminProductsPage() {
               />
             </div>
             <div>
-              <label className="text-fg mb-1.5 block text-sm font-medium">Stock</label>
+              <label htmlFor="product-stock" className="text-fg mb-1.5 block text-sm font-medium">
+                Stock
+              </label>
               <Input
+                id="product-stock"
                 type="number"
                 value={form.stock}
                 onChange={(v) => setForm({ ...form, stock: v })}
               />
             </div>
             <div>
-              <label className="text-fg mb-1.5 block text-sm font-medium">Categoría</label>
+              <label
+                htmlFor="product-category"
+                className="text-fg mb-1.5 block text-sm font-medium"
+              >
+                Categoría
+              </label>
               <select
+                id="product-category"
+                aria-label="Categoría"
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
                 className="border-border-base bg-background text-fg w-full rounded-md border px-3 py-2 text-sm"
@@ -297,7 +319,7 @@ export default function AdminProductsPage() {
               </select>
             </div>
             <div>
-              <label className="text-fg mb-1.5 block text-sm font-medium">
+              <label htmlFor="product-image" className="text-fg mb-1.5 block text-sm font-medium">
                 Imagen {editing ? '(opcional)' : '(obligatoria)'}
               </label>
 
@@ -316,6 +338,8 @@ export default function AdminProductsPage() {
               )}
 
               <input
+                id="product-image"
+                aria-label="Imagen del producto"
                 type="file"
                 accept="image/*"
                 onChange={(e) => {

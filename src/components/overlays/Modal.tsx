@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { LuX } from 'react-icons/lu';
 import type { ModalProps, ModalHeaderProps, ModalBodyProps, ModalFooterProps } from './types';
@@ -33,15 +33,20 @@ export function Modal({
   maxHeight = '85vh',
   className,
 }: ModalProps) {
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   // Close on Escape
   useEffect(() => {
     if (!isOpen) return;
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onCloseRef.current();
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -56,6 +61,7 @@ export function Modal({
         <div
           role="dialog"
           aria-modal="true"
+          aria-label="Ventana emergente"
           className={`${WINDOW_CLASSES} ${className ?? ''}`}
           style={{ width, maxHeight }}
           onClick={(e) => e.stopPropagation()}

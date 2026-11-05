@@ -98,14 +98,23 @@ export const authHandlers = [
   }),
 
   http.post('*/auth/refresh', async ({ request }) => {
-    const body = (await request.json()) as { refreshToken: string };
+    let refreshToken = 'mock-refresh-token';
+    try {
+      const text = await request.text();
+      if (text) {
+        const body = JSON.parse(text) as { refreshToken?: string };
+        if (body.refreshToken) refreshToken = body.refreshToken;
+      }
+    } catch {
+      // Body vacío es normal cuando el refresh token viaja en cookie HttpOnly
+    }
     return HttpResponse.json({
       success: true,
       message: 'Token refrescado',
       data: {
         user: MOCK_USERS['admin@test.com'].user,
         accessToken: makeToken('1'),
-        refreshToken: body.refreshToken,
+        refreshToken,
         expiresIn: 3600,
       },
     });
@@ -146,7 +155,7 @@ export const authHandlers = [
       });
     }
     return HttpResponse.json(
-      { success: false, message: 'Token inválido', code: 'VALIDATION_ERROR' },
+      { success: false, message: 'Token inválido o expirado', code: 'VALIDATION_ERROR' },
       { status: 400 },
     );
   }),
@@ -162,7 +171,11 @@ export const authHandlers = [
       return HttpResponse.json({
         success: true,
         message: 'OTP verificado',
-        data: { verified: true, token: `reset-token-${Date.now()}` },
+        data: {
+          resetToken: `reset-token-${Date.now()}`,
+          token: `reset-token-${Date.now()}`,
+          verified: true,
+        },
       });
     }
 

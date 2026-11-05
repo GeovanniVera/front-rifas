@@ -67,11 +67,11 @@ export function BulkActionsBar({
 
       {/* Right: Actions */}
       <div className="flex items-center gap-1.5">
-        {actions.map((action, i) => {
+        {actions.map((action) => {
           const Icon = action.icon;
           return (
             <button
-              key={i}
+              key={action.label}
               onClick={action.onClick}
               className={actionClasses(action.variant === 'danger')}
             >

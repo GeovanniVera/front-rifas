@@ -95,9 +95,9 @@ export default function TermsPage() {
 
         {/* Sections */}
         <div className="space-y-6">
-          {SECTIONS.map((section, index) => (
+          {SECTIONS.map((section) => (
             <section
-              key={index}
+              key={section.title}
               className="border-border-base bg-background hover:border-accent-line rounded-xl border p-6 transition-colors"
             >
               <h2 className="text-fg mb-3 text-base font-semibold">{section.title}</h2>

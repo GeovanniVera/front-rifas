@@ -24,7 +24,7 @@ export default function VerifyEmailConfirmPage() {
     if (!token || hasCalled.current) return;
     hasCalled.current = true;
     verifyEmailMutation.mutate(token);
-  }, [token]);
+  }, [token, verifyEmailMutation]);
 
   // Redirigir a login después de verificación exitosa
   useEffect(() => {
@@ -46,7 +46,7 @@ export default function VerifyEmailConfirmPage() {
         <button
           type="button"
           onClick={() => navigate('/login')}
-          className="bg-accent hover:bg-accent-hover mt-4 rounded-md px-6 py-3 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-sm"
+          className="bg-accent hover:bg-accent-hover mt-4 rounded-md px-6 py-3 text-sm font-semibold text-white shadow-md transition-[background-color,transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-sm"
         >
           {t('auth.login.backToLogin')}
         </button>
@@ -54,8 +54,11 @@ export default function VerifyEmailConfirmPage() {
     );
   }
 
-  // Loading
-  if (verifyEmailMutation.isPending) {
+  // Loading (pending or waiting for mutation to settle)
+  if (
+    verifyEmailMutation.isPending ||
+    (!verifyEmailMutation.isSuccess && !verifyEmailMutation.error)
+  ) {
     return (
       <div className="flex h-full w-full flex-col items-center justify-center gap-6 p-8 text-center">
         <div className="bg-accent-subtle flex size-16 items-center justify-center rounded-full">
@@ -76,12 +79,14 @@ export default function VerifyEmailConfirmPage() {
         </div>
         <h2 className="text-fg text-xl font-bold">{t('errors.unknown')}</h2>
         <p className="text-fg-muted text-sm">
-          {verifyEmailMutation.error.message || 'Error al verificar el email'}
+          {verifyEmailMutation.error.message.includes('Error al verificar el email')
+            ? verifyEmailMutation.error.message
+            : `Error al verificar el email: ${verifyEmailMutation.error.message}`}
         </p>
         <button
           type="button"
           onClick={() => navigate('/login')}
-          className="bg-accent hover:bg-accent-hover mt-4 rounded-md px-6 py-3 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-sm"
+          className="bg-accent hover:bg-accent-hover mt-4 rounded-md px-6 py-3 text-sm font-semibold text-white shadow-md transition-[background-color,transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-sm"
         >
           {t('auth.login.backToLogin')}
         </button>

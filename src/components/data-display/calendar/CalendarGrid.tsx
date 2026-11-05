@@ -90,7 +90,8 @@ export function CalendarGrid({
 
   const renderPill = (event: CalendarEvent) => {
     return (
-      <div
+      <button
+        type="button"
         key={event.id}
         className={[
           PILL_BASE_CLASSES,
@@ -106,13 +107,20 @@ export function CalendarGrid({
           e.stopPropagation();
           onEventClick?.(event);
         }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            e.stopPropagation();
+            onEventClick?.(event);
+          }
+        }}
         title={`${event.title}${event.start ? ` — ${format(event.start, 'HH:mm')}` : ''}`}
       >
         <span className={PILL_TITLE_BASE_CLASSES}>{event.title}</span>
         {event.start && !event.allDay && (
           <span className={PILL_TIME_CLASSES}>{format(event.start, 'h:mm a')}</span>
         )}
-      </div>
+      </button>
     );
   };
 
@@ -143,17 +151,20 @@ export function CalendarGrid({
               onDragOver={(e) => onDragOver(e, day)}
               onDragLeave={onDragLeave}
               onDrop={(e) => onDrop(e, day)}
-              onClick={() => onDayClick?.(day, dayEvents)}
             >
-              <div
-                className={`${DAY_NUMBER_CLASSES} ${isTodayDate ? DAY_NUMBER_TODAY_CLASSES : ''}`}
+              <button
+                type="button"
+                className={`${DAY_NUMBER_CLASSES} ${isTodayDate ? DAY_NUMBER_TODAY_CLASSES : ''} cursor-pointer border-none bg-transparent`}
+                onClick={() => onDayClick?.(day, dayEvents)}
+                aria-label={`Día ${format(day, 'd')}`}
               >
                 {format(day, 'd')}
-              </div>
+              </button>
               <div className={EVENTS_CONTAINER_CLASSES}>
                 {dayEvents.slice(0, 3).map((evt) => renderPill(evt))}
                 {dayEvents.length > 3 && (
-                  <div
+                  <button
+                    type="button"
                     className={OVERFLOW_CLASSES}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -161,7 +172,7 @@ export function CalendarGrid({
                     }}
                   >
                     +{dayEvents.length - 3} más
-                  </div>
+                  </button>
                 )}
               </div>
             </div>

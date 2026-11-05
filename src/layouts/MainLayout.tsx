@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Outlet, useLocation, Link, NavLink, useNavigate } from 'react-router';
 import {
   LuSettings,
@@ -61,7 +61,7 @@ function Breadcrumbs() {
   return (
     <nav className={styles.breadcrumbs}>
       {items.map((item, i) => (
-        <span key={i} className={styles.crumb}>
+        <span key={item.href || item.label} className={styles.crumb}>
           {i > 0 && <span className={styles.crumbSep}>›</span>}
           {item.isLast ? (
             <span className={styles.crumbCurrent}>{item.label}</span>
@@ -76,21 +76,27 @@ function Breadcrumbs() {
   );
 }
 
-function useActive(path: string) {
+function useIsActive() {
   const { pathname } = useLocation();
-  return path === '/' ? pathname === '/' : pathname.startsWith(path);
+  return useCallback(
+    (path: string) => (path === '/' ? pathname === '/' : pathname.startsWith(path)),
+    [pathname],
+  );
 }
 
 function AppNavItems() {
-  const isActive = useActive;
-  const [adminOpen, setAdminOpen] = useState(isActive('/admin'));
-  const [tiendaOpen, setTiendaOpen] = useState(isActive('/admin/productos') || isActive('/admin/rifas'));
+  const isActive = useIsActive();
+  const [adminOpen, setAdminOpen] = useState<boolean>(() => isActive('/admin'));
+  const [tiendaOpen, setTiendaOpen] = useState<boolean>(
+    () => isActive('/admin/productos') || isActive('/admin/rifas'),
+  );
 
   return (
     <>
       <NavItem to="/dashboard" icon={LuHouse} label="Dashboard" active={isActive('/dashboard')} />
+      <NavItem as={NavLink} to="/" icon={LuShoppingBag} label="Ir a la tienda" />
 
-      <Can anyOf={["products.read", "raffles.read"]}>
+      <Can anyOf={['products.read', 'raffles.read']}>
         <NavGroup
           icon={LuShoppingBag}
           label="Tienda"
@@ -177,8 +183,8 @@ function AppNavItems() {
 }
 
 function AppFooter() {
-  const isActive = useActive;
-  const [ajustesOpen, setAjustesOpen] = useState(isActive('/ajustes'));
+  const isActive = useIsActive();
+  const [ajustesOpen, setAjustesOpen] = useState<boolean>(() => isActive('/ajustes'));
   const { logout } = useAuth();
   const navigate = useNavigate();
 

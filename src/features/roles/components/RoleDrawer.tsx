@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Drawer } from '@components/overlays/Drawer';
 import Button from '@components/primitives/Button';
 import Input from '@components/primitives/Input';
@@ -15,32 +15,19 @@ interface RoleDrawerProps {
   role: Role | null;
 }
 
-export function RoleDrawer({ isOpen, onClose, role }: RoleDrawerProps) {
+function RoleDrawerContent({ role, onClose, isOpen }: RoleDrawerProps) {
   const toast = useToast();
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [selectedPerms, setSelectedPerms] = useState<Set<string>>(new Set());
+  const [name, setName] = useState(role?.name ?? '');
+  const [description, setDescription] = useState(role?.description ?? '');
+  const [selectedPerms, setSelectedPerms] = useState<Set<string>>(
+    () => new Set(role?.permissions.map((p) => p.id) ?? []),
+  );
   const createRole = useCreateRole();
   const updateRole = useUpdateRole();
-  // La ruta solo exige roles.read: /admin/permissions requiere permissions.read
-  // y, sin él, el backend responde 403 y onForbidden redirige. Se gatea por
-  // privilegio y por drawer abierto.
   const canReadPermissions = useHasPrivilege('permissions.read');
   const { data: permissions = [] } = usePermissions({
     enabled: canReadPermissions && isOpen,
   });
-
-  useEffect(() => {
-    if (role) {
-      setName(role.name);
-      setDescription(role.description ?? '');
-      setSelectedPerms(new Set(role.permissions.map((p) => p.id)));
-    } else {
-      setName('');
-      setDescription('');
-      setSelectedPerms(new Set());
-    }
-  }, [role, isOpen]);
 
   const togglePerm = (permId: string) => {
     setSelectedPerms((prev) => {
@@ -75,19 +62,18 @@ export function RoleDrawer({ isOpen, onClose, role }: RoleDrawerProps) {
     }
   };
 
-  // Vista de solo lectura para quien no tiene roles.write
   const readOnlyView = role ? (
     <div className="space-y-4">
       <div>
-        <label className="text-fg-muted text-sm">Nombre</label>
+        <span className="text-fg-muted block text-sm">Nombre</span>
         <p className="text-fg text-sm font-medium">{role.name}</p>
       </div>
       <div>
-        <label className="text-fg-muted text-sm">Descripción</label>
+        <span className="text-fg-muted block text-sm">Descripción</span>
         <p className="text-fg text-sm">{role.description || '—'}</p>
       </div>
       <div>
-        <label className="text-fg mb-2 block text-sm font-medium">Permisos</label>
+        <span className="text-fg mb-2 block text-sm font-medium">Permisos</span>
         <div className="flex flex-wrap gap-1">
           {role.permissions.length > 0 ? (
             role.permissions.map((p) => (
@@ -107,18 +93,33 @@ export function RoleDrawer({ isOpen, onClose, role }: RoleDrawerProps) {
   ) : null;
 
   return (
-    <Drawer isOpen={isOpen} onClose={onClose}>
+    <>
       <Drawer.Header title={role ? 'Detalle del rol' : 'Crear rol'} />
       <Drawer.Body>
         <Can privilege="roles.write" fallback={readOnlyView}>
           <div className="space-y-4">
             <div>
-              <label className="text-fg mb-1.5 block text-sm font-medium">Nombre</label>
-              <Input type="text" value={name} onChange={setName} placeholder="ej: admin" required />
+              <label htmlFor="role-name" className="text-fg mb-1.5 block text-sm font-medium">
+                Nombre
+              </label>
+              <Input
+                id="role-name"
+                type="text"
+                value={name}
+                onChange={setName}
+                placeholder="ej: admin"
+                required
+              />
             </div>
             <div>
-              <label className="text-fg mb-1.5 block text-sm font-medium">Descripción</label>
+              <label
+                htmlFor="role-description"
+                className="text-fg mb-1.5 block text-sm font-medium"
+              >
+                Descripción
+              </label>
               <Input
+                id="role-description"
                 type="text"
                 value={description}
                 onChange={setDescription}
@@ -126,7 +127,7 @@ export function RoleDrawer({ isOpen, onClose, role }: RoleDrawerProps) {
               />
             </div>
             <div>
-              <label className="text-fg mb-2 block text-sm font-medium">Permisos</label>
+              <span className="text-fg mb-2 block text-sm font-medium">Permisos</span>
               <CheckboxSearchList
                 options={permissions.map((perm: Permission) => ({
                   id: perm.id,
@@ -157,6 +158,16 @@ export function RoleDrawer({ isOpen, onClose, role }: RoleDrawerProps) {
           </Button>
         </Can>
       </Drawer.Footer>
+    </>
+  );
+}
+
+export function RoleDrawer({ isOpen, onClose, role }: RoleDrawerProps) {
+  return (
+    <Drawer isOpen={isOpen} onClose={onClose}>
+      {isOpen && (
+        <RoleDrawerContent key={role?.id ?? 'new'} isOpen={isOpen} onClose={onClose} role={role} />
+      )}
     </Drawer>
   );
 }

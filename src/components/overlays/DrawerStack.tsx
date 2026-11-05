@@ -96,18 +96,25 @@ export function DrawerStack({
     prevLevelRef.current = level;
   }, [level]);
 
+  const onBackRef = useRef(onBack);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onBackRef.current = onBack;
+    onCloseRef.current = onClose;
+  });
+
   // Close on Escape
   useEffect(() => {
     if (!isOpen) return;
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (level > 0 && onBack) onBack();
-        else onClose();
+        if (level > 0 && onBackRef.current) onBackRef.current();
+        else onCloseRef.current();
       }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [isOpen, level, onBack, onClose]);
+  }, [isOpen, level]);
 
   if (!isOpen) return null;
 
@@ -125,6 +132,7 @@ export function DrawerStack({
         <div
           role="dialog"
           aria-modal="true"
+          aria-label="Panel lateral"
           className={`${WINDOW_CLASSES} ${className ?? ''}`}
           style={{ width }}
           onClick={(e) => e.stopPropagation()}

@@ -1,17 +1,26 @@
-import { useNavigate } from 'react-router'
-import { useProductsAvailable } from '../../features/store/hooks/useProducts'
-import { useRafflesActive } from '../../features/store/hooks/useRaffles'
-import { LuShoppingCart, LuTicket, LuPackage, LuSparkles, LuArrowRight, LuShieldCheck } from 'react-icons/lu'
-import styles from './StoreHomePage.module.css'
+import { useNavigate } from 'react-router';
+import { useProductsAvailable } from '../../features/store/hooks/useProducts';
+import { useRafflesActive } from '../../features/store/hooks/useRaffles';
+import {
+  // LuShoppingCart,
+  LuTicket,
+  LuPackage,
+  LuSparkles,
+  LuArrowRight,
+  LuShieldCheck,
+  LuCalendar,
+} from 'react-icons/lu';
+import styles from './StoreHomePage.module.css';
+import { formatCurrency } from '@config/constants';
 
 export default function StoreHomePage() {
-  const navigate = useNavigate()
-  const { data: products = [], isLoading: productsLoading } = useProductsAvailable()
-  const { data: raffles = [], isLoading: rafflesLoading } = useRafflesActive()
+  const navigate = useNavigate();
+  const { data: products = [] /*, isLoading: productsLoading */ } = useProductsAvailable();
+  const { data: raffles = [], isLoading: rafflesLoading } = useRafflesActive();
 
   const scrollToSection = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
-  }
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   return (
     <div className={styles.page}>
@@ -35,18 +44,26 @@ export default function StoreHomePage() {
           que querés
         </h1>
         <p className={styles.heroSubtitle}>
-          Comprá componentes de tecnología al mejor precio, o participá en nuestras rifas
-          para llevarte un producto por una fracción de su valor.
+          Comprá componentes de tecnología al mejor precio, o participá en nuestras rifas para
+          llevarte un producto por una fracción de su valor.
         </p>
 
         <div className={styles.heroCtas}>
-          <button className={styles.heroCtaPrimary} onClick={() => scrollToSection('seccion-rifas')}>
+          <button
+            className={styles.heroCtaPrimary}
+            onClick={() => scrollToSection('seccion-rifas')}
+          >
             Explorar rifas
             <LuArrowRight size={16} />
           </button>
-          <button className={styles.heroCtaGhost} onClick={() => scrollToSection('seccion-productos')}>
+          {/*
+          <button
+            className={styles.heroCtaGhost}
+            onClick={() => scrollToSection('seccion-productos')}
+          >
             Ver productos
           </button>
+          */}
         </div>
 
         <div className={styles.heroStats}>
@@ -73,7 +90,7 @@ export default function StoreHomePage() {
         ) : (
           <div className={styles.grid}>
             {raffles.map((raffle) => (
-              <article
+              <div
                 key={raffle.id}
                 className={`${styles.card} ${styles.raffleCard}`}
                 onClick={() => navigate(`/rifa/${raffle.id}`)}
@@ -81,8 +98,8 @@ export default function StoreHomePage() {
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault()
-                    navigate(`/rifa/${raffle.id}`)
+                    e.preventDefault();
+                    navigate(`/rifa/${raffle.id}`);
                   }
                 }}
               >
@@ -92,34 +109,50 @@ export default function StoreHomePage() {
                     alt={raffle.name}
                     className={styles.image}
                     onError={(e) => {
-                      ;(e.target as HTMLImageElement).style.display = 'none'
-                      ;(e.target as HTMLImageElement).parentElement!.classList.add(styles.imageFallback)
+                      (e.target as HTMLImageElement).style.display = 'none';
+                      (e.target as HTMLImageElement).parentElement!.classList.add(
+                        styles.imageFallback,
+                      );
                     }}
                   />
                   <span className={styles.badge}>Rifa</span>
                 </div>
                 <div className={styles.cardBody}>
                   <h3 className={styles.cardTitle}>{raffle.name}</h3>
-                  <p className={styles.cardDesc}>
-                    {raffle.ticketCount} boletos · margen {raffle.marginPercent}%
-                  </p>
+                  <p className={styles.cardDesc}>{raffle.ticketCount} boletos emitidos</p>
+                  {raffle.drawDate && (
+                    <div className="text-accent flex items-center gap-1.5 text-xs font-medium">
+                      <LuCalendar size={13} className="shrink-0" />
+                      <span>
+                        Sorteo:{' '}
+                        {new Date(raffle.drawDate).toLocaleDateString('es-MX', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                  )}
                   <div className={styles.cardFooter}>
                     <span className={styles.price}>
-                      ${raffle.ticketPrice.toLocaleString('es-MX')}
+                      {formatCurrency(raffle.ticketPrice)}{' '}
+                      <small className="text-fg-muted text-xs">/boleto</small>
                     </span>
                     <span className={styles.buyBtn}>
                       <LuTicket size={16} />
-                      Participar
+                      Ver detalles
                     </span>
                   </div>
                 </div>
-              </article>
+              </div>
             ))}
           </div>
         )}
       </section>
 
-      {/* Productos en venta (backend) */}
+      {/* Productos en venta (backend) 
       <section id="seccion-productos">
         <h2 className={styles.sectionTitle}>Productos en venta</h2>
         {productsLoading ? (
@@ -137,8 +170,8 @@ export default function StoreHomePage() {
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault()
-                    navigate(`/producto/${product.id}`)
+                    e.preventDefault();
+                    navigate(`/producto/${product.id}`);
                   }
                 }}
               >
@@ -148,8 +181,10 @@ export default function StoreHomePage() {
                     alt={product.name}
                     className={styles.image}
                     onError={(e) => {
-                      ;(e.target as HTMLImageElement).style.display = 'none'
-                      ;(e.target as HTMLImageElement).parentElement!.classList.add(styles.imageFallback)
+                      (e.target as HTMLImageElement).style.display = 'none';
+                      (e.target as HTMLImageElement).parentElement!.classList.add(
+                        styles.imageFallback,
+                      );
                     }}
                   />
                   <span className={styles.badge}>{product.category}</span>
@@ -170,6 +205,7 @@ export default function StoreHomePage() {
           </div>
         )}
       </section>
+      */}
     </div>
-  )
+  );
 }

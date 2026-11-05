@@ -26,7 +26,7 @@ function LoginPage() {
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
 
-  const from = (location.state as { from?: Location })?.from?.pathname || '/dashboard';
+  const from = (location.state as { from?: Location })?.from?.pathname || '/';
   const suspendedMessage = searchParams.get('error');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -70,8 +70,11 @@ function LoginPage() {
         {/* Formulario */}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-1.5">
-            <label className="text-fg block text-sm font-medium">{t('auth.login.email')}</label>
+            <label htmlFor="login-email" className="text-fg block text-sm font-medium">
+              {t('auth.login.email')}
+            </label>
             <Input
+              id="login-email"
               type="email"
               value={email}
               onChange={setEmail}
@@ -83,8 +86,11 @@ function LoginPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-fg block text-sm font-medium">{t('auth.login.password')}</label>
+            <label htmlFor="login-password" className="text-fg block text-sm font-medium">
+              {t('auth.login.password')}
+            </label>
             <Input
+              id="login-password"
               type="password"
               value={password}
               onChange={setPassword}

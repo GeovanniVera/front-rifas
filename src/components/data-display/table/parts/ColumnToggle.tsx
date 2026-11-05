@@ -85,12 +85,19 @@ export function ColumnToggle({ columns, onToggle, onShowAll }: ColumnToggleProps
 
           <div className={LIST_CLASSES}>
             {columns.map((col) => (
-              <label key={col.key} onClick={() => onToggle(col.key)} className={ITEM_CLASSES}>
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={col.visible}
+                key={col.key}
+                onClick={() => onToggle(col.key)}
+                className={ITEM_CLASSES}
+              >
                 <div className={checkboxClasses(col.visible)}>
                   {col.visible && <LuCheck size={10} color="#fff" />}
                 </div>
                 <span className={ITEM_LABEL_CLASSES(col.visible)}>{col.header}</span>
-              </label>
+              </button>
             ))}
           </div>
         </div>

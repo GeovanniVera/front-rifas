@@ -79,7 +79,8 @@ export function CalendarList({
 
   const renderPill = (event: CalendarEvent) => {
     return (
-      <div
+      <button
+        type="button"
         key={event.id}
         className={[
           PILL_BASE_CLASSES,
@@ -95,13 +96,20 @@ export function CalendarList({
           e.stopPropagation();
           onEventClick?.(event);
         }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            e.stopPropagation();
+            onEventClick?.(event);
+          }
+        }}
         title={`${event.title}${event.start ? ` — ${format(event.start, 'HH:mm')}` : ''}`}
       >
         <span className={PILL_TITLE_BASE_CLASSES}>{event.title}</span>
         {event.start && !event.allDay && (
           <span className={PILL_TIME_CLASSES}>{format(event.start, 'h:mm a')}</span>
         )}
-      </div>
+      </button>
     );
   };
 

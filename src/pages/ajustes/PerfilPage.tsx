@@ -15,14 +15,14 @@ export default function PerfilPage() {
 
   const [name, setName] = useState(user?.name ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
-  const [photo, setPhoto] = useState<File | null>(null);
+  const photoRef = useRef<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(user?.photoUrl ?? null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setPhoto(file);
+    photoRef.current = file;
     const reader = new FileReader();
     reader.onload = () => setPhotoPreview(reader.result as string);
     reader.readAsDataURL(file);
@@ -37,7 +37,7 @@ export default function PerfilPage() {
 
   const doSave = async () => {
     try {
-      await updateProfile.mutateAsync({ name, photo: photo ?? undefined });
+      await updateProfile.mutateAsync({ name, photo: photoRef.current ?? undefined });
       toast.success('Perfil actualizado correctamente');
     } catch {
       toast.error('Error al actualizar el perfil');
@@ -104,8 +104,14 @@ export default function PerfilPage() {
               {/* Formulario */}
               <div className="space-y-4">
                 <div>
-                  <label className="text-fg mb-1.5 block text-sm font-medium">Nombre</label>
+                  <label
+                    htmlFor="profile-name"
+                    className="text-fg mb-1.5 block text-sm font-medium"
+                  >
+                    Nombre
+                  </label>
                   <Input
+                    id="profile-name"
                     type="text"
                     value={name}
                     onChange={setName}
@@ -114,8 +120,14 @@ export default function PerfilPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-fg mb-1.5 block text-sm font-medium">Email</label>
+                  <label
+                    htmlFor="profile-email"
+                    className="text-fg mb-1.5 block text-sm font-medium"
+                  >
+                    Email
+                  </label>
                   <Input
+                    id="profile-email"
                     type="email"
                     value={email}
                     onChange={setEmail}

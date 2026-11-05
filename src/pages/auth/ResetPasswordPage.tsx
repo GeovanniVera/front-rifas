@@ -4,7 +4,7 @@
  * Tercer paso del flujo: ingresa la nueva contraseña.
  * Requiere token válido del paso anterior.
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { LuLock, LuArrowLeft, LuCheck } from 'react-icons/lu';
 import { useTranslation } from 'react-i18next';
@@ -25,8 +25,13 @@ export default function ResetPasswordPage() {
   const [success, setSuccess] = useState(false);
 
   // Redirigir si no hay token
+  useEffect(() => {
+    if (!token && !success) {
+      navigate('/forgot-password');
+    }
+  }, [token, success, navigate]);
+
   if (!token && !success) {
-    navigate('/forgot-password');
     return null;
   }
 
@@ -120,10 +125,11 @@ export default function ResetPasswordPage() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-1.5">
-            <label className="text-fg block text-sm font-medium">
+            <label htmlFor="reset-password" className="text-fg block text-sm font-medium">
               {t('auth.resetPassword.password')}
             </label>
             <Input
+              id="reset-password"
               type="password"
               value={password}
               onChange={setPassword}
@@ -137,10 +143,11 @@ export default function ResetPasswordPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-fg block text-sm font-medium">
+            <label htmlFor="reset-confirmPassword" className="text-fg block text-sm font-medium">
               {t('auth.resetPassword.confirmPassword')}
             </label>
             <Input
+              id="reset-confirmPassword"
               type="password"
               value={confirmPassword}
               onChange={setConfirmPassword}
@@ -169,7 +176,7 @@ export default function ResetPasswordPage() {
           <button
             type="submit"
             disabled={resetPasswordMutation.isPending}
-            className="bg-accent hover:bg-accent-hover flex w-full items-center justify-center gap-2 rounded-md px-6 py-3 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-sm disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md"
+            className="bg-accent hover:bg-accent-hover flex w-full items-center justify-center gap-2 rounded-md px-6 py-3 text-sm font-semibold text-white shadow-md transition-[background-color,transform,box-shadow,opacity] duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-sm disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md"
           >
             {resetPasswordMutation.isPending ? (
               <>

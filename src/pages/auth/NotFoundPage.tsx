@@ -21,7 +21,7 @@ export default function NotFoundPage() {
         <Button variant="primary" onClick={() => navigate(-1)}>
           {t('common.back')}
         </Button>
-        <Button variant="secondary" onClick={() => navigate('/dashboard')}>
+        <Button variant="secondary" onClick={() => navigate('/')}>
           {t('pages.notFound.backToHome')}
         </Button>
       </div>

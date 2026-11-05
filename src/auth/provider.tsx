@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, type ReactNode } from 'react';
+import { useState, useCallback, useEffect, useMemo, type ReactNode } from 'react';
 import { AuthContext } from './context';
 import { authService } from '../lib/api/services/auth.service';
 import { tokenManager } from '../lib/api/client';
@@ -208,7 +208,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
    * @returns true si tiene al menos uno, false si no hay usuario
    */
   const hasAnyPrivilege = useCallback(
-    (privileges: string[]) => privileges.some((p) => state.user?.permissions.includes(p)) ?? false,
+    (privileges: string[]) => {
+      if (!state.user?.permissions) return false;
+      const perms = new Set(state.user.permissions);
+      return privileges.some((p) => perms.has(p));
+    },
     [state.user],
   );
 
@@ -231,15 +235,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const isVerified = useCallback(() => state.user?.isVerified ?? false, [state.user]);
 
   // ─── Valor del contexto ──────────────────────────────────
-  const value = {
-    ...state,
-    login,
-    logout,
-    hasPrivilege,
-    hasAnyPrivilege,
-    hasRole,
-    isVerified,
-  };
+  const value = useMemo(
+    () => ({
+      ...state,
+      login,
+      logout,
+      hasPrivilege,
+      hasAnyPrivilege,
+      hasRole,
+      isVerified,
+    }),
+    [state, login, logout, hasPrivilege, hasAnyPrivilege, hasRole, isVerified],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

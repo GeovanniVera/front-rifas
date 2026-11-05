@@ -3,32 +3,25 @@ import { client, tokenManager, configureClient } from './client';
 import { server } from '../../test/mocks/server';
 import { http, HttpResponse } from 'msw';
 
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
+function memoryStorage(): Storage {
+  const values = new Map<string, string>();
   return {
-    getItem: (key: string) => store[key] ?? null,
-    setItem: (key: string, value: string) => {
-      store[key] = value;
-    },
-    removeItem: (key: string) => {
-      delete store[key];
-    },
-    clear: () => {
-      store = {};
-    },
     get length() {
-      return Object.keys(store).length;
+      return values.size;
     },
-    key: (index: number) => Object.keys(store)[index] ?? null,
+    clear: () => values.clear(),
+    getItem: (key) => values.get(key) ?? null,
+    key: (index) => [...values.keys()][index] ?? null,
+    removeItem: (key) => values.delete(key),
+    setItem: (key, value) => values.set(key, value),
   };
-})();
-
-Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, writable: true });
+}
 
 describe('HTTP Client — Refresh Token Flow', () => {
   beforeEach(() => {
+    vi.stubGlobal('localStorage', memoryStorage());
+    vi.stubGlobal('sessionStorage', memoryStorage());
     tokenManager.clear();
-    localStorage.clear();
     configureClient({
       baseUrl: '/api',
       onUnauthorized: vi.fn(),
@@ -37,6 +30,7 @@ describe('HTTP Client — Refresh Token Flow', () => {
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     server.resetHandlers();
   });
 
@@ -58,11 +52,16 @@ describe('HTTP Client — Refresh Token Flow', () => {
           data: { id: '1', name: 'Test' },
         });
       }),
-      http.post('/api/auth/refresh', () => {
+      http.post('*/auth/refresh', () => {
         return HttpResponse.json({
           success: true,
           message: 'Refreshed',
-          data: { token: 'new-token', refreshToken: 'new-refresh', expiresIn: 3600 },
+          data: {
+            token: 'new-token',
+            accessToken: 'new-token',
+            refreshToken: 'new-refresh',
+            expiresIn: 3600,
+          },
         });
       }),
     );
@@ -88,7 +87,7 @@ describe('HTTP Client — Refresh Token Flow', () => {
           { status: 401 },
         );
       }),
-      http.post('/api/auth/refresh', () => {
+      http.post('*/auth/refresh', () => {
         return HttpResponse.json(
           { success: false, message: 'Invalid refresh token', code: 'UNAUTHORIZED' },
           { status: 401 },
@@ -147,11 +146,16 @@ describe('HTTP Client — Refresh Token Flow', () => {
           { status: 401 },
         );
       }),
-      http.post('/api/auth/refresh', () => {
+      http.post('*/auth/refresh', () => {
         return HttpResponse.json({
           success: true,
           message: 'Refreshed',
-          data: { token: 'new-token', refreshToken: 'new-refresh', expiresIn: 3600 },
+          data: {
+            token: 'new-token',
+            accessToken: 'new-token',
+            refreshToken: 'new-refresh',
+            expiresIn: 3600,
+          },
         });
       }),
     );
@@ -261,12 +265,17 @@ describe('HTTP Client — Refresh Token Flow', () => {
           { status: 401 },
         );
       }),
-      http.post('/api/auth/refresh', () => {
+      http.post('*/auth/refresh', () => {
         refreshCount++;
         return HttpResponse.json({
           success: true,
           message: 'Refreshed',
-          data: { token: 'new-token', refreshToken: 'new-refresh', expiresIn: 3600 },
+          data: {
+            token: 'new-token',
+            accessToken: 'new-token',
+            refreshToken: 'new-refresh',
+            expiresIn: 3600,
+          },
         });
       }),
     );

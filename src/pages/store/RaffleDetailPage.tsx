@@ -77,7 +77,7 @@ function RaffleStats({ raffle }: { raffle: Raffle }) {
   );
 }
 
-function RaffleNotice({ drawDate }: { drawDate?: string }) {
+function RaffleNotice({ drawDate, isExpired }: { drawDate?: string; isExpired?: boolean }) {
   const formattedDate = drawDate
     ? new Date(drawDate).toLocaleString('es-MX', {
         dateStyle: 'long',
@@ -86,15 +86,28 @@ function RaffleNotice({ drawDate }: { drawDate?: string }) {
     : 'Fecha de sorteo por programar';
 
   return (
-    <div className="bg-surface border-border-base space-y-1.5 rounded-lg border p-4">
-      <div className="text-accent flex items-center gap-2 text-sm font-semibold">
+    <div
+      className={`space-y-1.5 rounded-lg border p-4 ${
+        isExpired ? 'border-warning/30 bg-warning/10' : 'border-border-base bg-surface'
+      }`}
+    >
+      <div
+        className={`flex items-center gap-2 text-sm font-semibold ${
+          isExpired ? 'text-warning-strong' : 'text-accent'
+        }`}
+      >
         <LuCalendar size={16} />
-        <span>{drawDate ? `Sorteo programado: ${formattedDate}` : formattedDate}</span>
+        <span>{drawDate ? `Sorteo: ${formattedDate}` : formattedDate}</span>
       </div>
       <p className="text-fg-muted flex items-start gap-1.5 text-xs">
-        <LuInfo size={14} className="text-accent mt-0.5 shrink-0" />
+        <LuInfo
+          size={14}
+          className={`mt-0.5 shrink-0 ${isExpired ? 'text-warning-strong' : 'text-accent'}`}
+        />
         <span>
-          Selecciona tus boletos favoritos en el tablero interactivo de abajo para participar en el sorteo.
+          {isExpired
+            ? 'La fecha límite de esta rifa ya pasó. El sorteo está en proceso o finalizado; la venta de boletos ha cerrado.'
+            : 'Selecciona tus boletos favoritos en el tablero interactivo de abajo para participar en el sorteo.'}
         </span>
       </p>
     </div>
@@ -137,7 +150,8 @@ export default function RaffleDetailPage() {
     );
   }
 
-  const isActive = raffle.status === 'ACTIVE';
+  const isExpired = raffle.drawDate ? new Date(raffle.drawDate).getTime() < Date.now() : false;
+  const isActive = raffle.status === 'ACTIVE' && !isExpired;
 
   const toggleTicket = (ticketNumber: number) => {
     setSelectedNumbers((prev) =>
@@ -211,7 +225,7 @@ export default function RaffleDetailPage() {
           {raffle.description && <p className={styles.description}>{raffle.description}</p>}
 
           <RaffleStats raffle={raffle} />
-          <RaffleNotice drawDate={raffle.drawDate} />
+          <RaffleNotice drawDate={raffle.drawDate} isExpired={isExpired} />
         </div>
       </div>
 
@@ -372,9 +386,13 @@ export default function RaffleDetailPage() {
               ) : isAuthenticated ? (
                 <>
                   <LuTicket size={18} />
-                  {selectedNumbers.length === 0
-                    ? 'Selecciona boletos'
-                    : `Comprar ${selectedNumbers.length} boleto(s)`}
+                  {isExpired ? (
+                    'Fecha límite vencida'
+                  ) : selectedNumbers.length === 0 ? (
+                    'Selecciona boletos'
+                  ) : (
+                    `Comprar ${selectedNumbers.length} boleto(s)`
+                  )}
                 </>
               ) : (
                 <>

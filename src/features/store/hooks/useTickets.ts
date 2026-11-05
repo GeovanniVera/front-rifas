@@ -17,8 +17,8 @@ export function useRaffleTickets(raffleId: string) {
       return response.data;
     },
     enabled: !!raffleId,
-    // Refresco periódico cada 4 segundos para sincronización entre múltiples usuarios
-    refetchInterval: 4000,
+    // Refresco periódico cada 5 segundos para sincronización entre múltiples usuarios
+    refetchInterval: 5000,
   });
 }
 

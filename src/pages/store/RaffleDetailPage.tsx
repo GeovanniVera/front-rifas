@@ -1,8 +1,26 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useRaffle } from '../../features/store/hooks/useRaffles';
-import { LuArrowLeft, LuTicket, LuLock, LuCalendar, LuInfo } from 'react-icons/lu';
+import {
+  useRaffleTickets,
+  useCreateCheckoutIntent,
+} from '../../features/store/hooks/useTickets';
+import {
+  LuArrowLeft,
+  LuTicket,
+  LuLock,
+  LuCalendar,
+  LuInfo,
+  LuCheck,
+  LuLoader,
+  LuShieldAlert,
+} from 'react-icons/lu';
 import { useAuth } from '../../auth';
+import { useToast } from '@components/feedback';
+import { StripeCheckoutModal } from '../../features/store/components/StripeCheckoutModal';
 import type { Raffle } from '../../features/store/services/raffles.service';
+import type { CheckoutIntentResponse } from '../../features/store/services/tickets.service';
+import { formatCurrency } from '@config/constants';
 import styles from './RaffleDetailPage.module.css';
 
 const STATUS_LABEL: Record<string, string> = {
@@ -35,7 +53,7 @@ function RaffleStats({ raffle }: { raffle: Raffle }) {
           <span className={styles.statLabel}>boletos disponibles</span>
         </div>
         <div className={styles.stat}>
-          <span className={styles.statValue}>${raffle.ticketPrice.toLocaleString('es-MX')}</span>
+          <span className={styles.statValue}>{formatCurrency(raffle.ticketPrice)}</span>
           <span className={styles.statLabel}>por boleto</span>
         </div>
         <div className={styles.stat}>
@@ -59,7 +77,7 @@ function RaffleStats({ raffle }: { raffle: Raffle }) {
   );
 }
 
-function RaffleNotice({ drawDate }: { drawDate?: string }) {
+function RaffleNotice({ drawDate, isExpired }: { drawDate?: string; isExpired?: boolean }) {
   const formattedDate = drawDate
     ? new Date(drawDate).toLocaleString('es-MX', {
         dateStyle: 'long',
@@ -68,16 +86,28 @@ function RaffleNotice({ drawDate }: { drawDate?: string }) {
     : 'Fecha de sorteo por programar';
 
   return (
-    <div className="bg-surface border-border-base space-y-1.5 rounded-lg border p-4">
-      <div className="text-accent flex items-center gap-2 text-sm font-semibold">
+    <div
+      className={`space-y-1.5 rounded-lg border p-4 ${
+        isExpired ? 'border-warning/30 bg-warning/10' : 'border-border-base bg-surface'
+      }`}
+    >
+      <div
+        className={`flex items-center gap-2 text-sm font-semibold ${
+          isExpired ? 'text-warning-strong' : 'text-accent'
+        }`}
+      >
         <LuCalendar size={16} />
-        <span>{drawDate ? `Sorteo programado: ${formattedDate}` : formattedDate}</span>
+        <span>{drawDate ? `Sorteo: ${formattedDate}` : formattedDate}</span>
       </div>
       <p className="text-fg-muted flex items-start gap-1.5 text-xs">
-        <LuInfo size={14} className="text-accent mt-0.5 shrink-0" />
+        <LuInfo
+          size={14}
+          className={`mt-0.5 shrink-0 ${isExpired ? 'text-warning-strong' : 'text-accent'}`}
+        />
         <span>
-          Rifa anunciada. La compra y selección de boletos se habilitará próximamente antes del
-          sorteo.
+          {isExpired
+            ? 'La fecha límite de esta rifa ya pasó. El sorteo está en proceso o finalizado; la venta de boletos ha cerrado.'
+            : 'Selecciona tus boletos favoritos en el tablero interactivo de abajo para participar en el sorteo.'}
         </span>
       </p>
     </div>
@@ -87,10 +117,20 @@ function RaffleNotice({ drawDate }: { drawDate?: string }) {
 export default function RaffleDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const toast = useToast();
   const { isAuthenticated } = useAuth();
-  const { data: raffle, isLoading, error } = useRaffle(id ?? '');
 
-  if (isLoading) {
+  const { data: raffle, isLoading: raffleLoading, error } = useRaffle(id ?? '');
+  const { data: tickets = [], isLoading: ticketsLoading, refetch: refetchTickets } = useRaffleTickets(
+    id ?? '',
+  );
+  const createCheckout = useCreateCheckoutIntent();
+
+  const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]);
+  const [checkoutData, setCheckoutData] = useState<CheckoutIntentResponse | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  if (raffleLoading) {
     return (
       <div className={styles.notFound}>
         <p className="text-fg-muted">Cargando rifa...</p>
@@ -110,17 +150,52 @@ export default function RaffleDetailPage() {
     );
   }
 
-  const isActive = raffle.status === 'ACTIVE';
-  const isAvailable = isActive && raffle.ticketsSold < raffle.ticketCount;
+  const isExpired = raffle.drawDate ? new Date(raffle.drawDate).getTime() < Date.now() : false;
+  const isActive = raffle.status === 'ACTIVE' && !isExpired;
 
-  const handleParticipate = () => {
-    if (isAuthenticated) {
-      // TODO v2: checkout de rifa (selección de boletos + pago)
-      navigate('/dashboard');
-    } else {
+  const toggleTicket = (ticketNumber: number) => {
+    setSelectedNumbers((prev) =>
+      prev.includes(ticketNumber)
+        ? prev.filter((n) => n !== ticketNumber)
+        : [...prev, ticketNumber].sort((a, b) => a - b),
+    );
+  };
+
+  const handleStartCheckout = async () => {
+    if (!isAuthenticated) {
       navigate('/login', { state: { from: { pathname: `/rifa/${raffle.id}` } } });
+      return;
+    }
+
+    if (selectedNumbers.length === 0) {
+      toast.warning('Selecciona al menos un boleto para continuar');
+      return;
+    }
+
+    try {
+      const intent = await createCheckout.mutateAsync({
+        raffleId: raffle.id,
+        ticketNumbers: selectedNumbers,
+      });
+
+      setCheckoutData(intent);
+      setIsModalOpen(true);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al apartar los boletos';
+      toast.error(msg);
+      // Refrescar boletos para reflejar el estado actual si alguien más los ganó
+      refetchTickets();
     }
   };
+
+  const handleCheckoutSuccess = () => {
+    setSelectedNumbers([]);
+    setCheckoutData(null);
+    setIsModalOpen(false);
+    refetchTickets();
+  };
+
+  const totalSelectedPrice = selectedNumbers.length * raffle.ticketPrice;
 
   return (
     <div className={styles.page}>
@@ -150,36 +225,208 @@ export default function RaffleDetailPage() {
           {raffle.description && <p className={styles.description}>{raffle.description}</p>}
 
           <RaffleStats raffle={raffle} />
-          <RaffleNotice drawDate={raffle.drawDate} />
-
-          <button
-            className={styles.buyBtn}
-            onClick={handleParticipate}
-            disabled={!isAuthenticated || isActive || !isAvailable}
-          >
-            {isAuthenticated ? (
-              <>
-                <LuTicket size={18} />
-                {isActive
-                  ? 'Venta de boletos próximamente'
-                  : (STATUS_LABEL[raffle.status] ?? raffle.status)}
-              </>
-            ) : (
-              <>
-                <LuLock size={18} />
-                Iniciá sesión para participar
-              </>
-            )}
-          </button>
-
-          {!isAuthenticated && (
-            <p className={styles.authHint}>
-              ¿Ya tenés cuenta? <a href="/login">Iniciá sesión</a> o{' '}
-              <a href="/register">registrate</a> para participar.
-            </p>
-          )}
+          <RaffleNotice drawDate={raffle.drawDate} isExpired={isExpired} />
         </div>
       </div>
+
+      {/* ─── TABLERO INTERACTIVO DE BOLETOS ─── */}
+      <section className="bg-surface border-border-base space-y-6 rounded-2xl border p-6 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-heading flex items-center gap-2 text-xl font-bold">
+              <LuTicket className="text-accent" />
+              Selecciona tus Boletos
+            </h2>
+            <p className="text-fg-muted text-sm">
+              Haz clic en los boletos disponibles que quieras comprar para este sorteo.
+            </p>
+          </div>
+
+          {/* Leyenda de colores */}
+          <div className="flex flex-wrap items-center gap-3 text-xs">
+            <span className="flex items-center gap-1.5 font-medium text-foreground">
+              <span className="border-border-base bg-background inline-block size-3.5 rounded border" />
+              Disponible
+            </span>
+            <span className="flex items-center gap-1.5 font-medium text-foreground">
+              <span className="bg-accent inline-block size-3.5 rounded" />
+              Seleccionado
+            </span>
+            <span className="flex items-center gap-1.5 font-medium text-foreground">
+              <span className="bg-foreground/15 border-border-base inline-block size-3.5 rounded border opacity-60" />
+              Ocupado / Vendido
+            </span>
+          </div>
+        </div>
+
+        {ticketsLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <LuLoader size={28} className="text-accent animate-spin" />
+            <span className="text-fg-muted ml-2 text-sm">Cargando tablero de boletos...</span>
+          </div>
+        ) : tickets.length === 0 ? (
+          <div className="text-fg-muted py-8 text-center text-sm">
+            No hay boletos emitidos aún para esta rifa.
+          </div>
+        ) : (
+          <div className="grid grid-cols-5 gap-2.5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12">
+            {tickets.map((ticket) => {
+              const isSelected = selectedNumbers.includes(ticket.ticketNumber);
+              const isSold = ticket.status === 'SOLD';
+              const isReserved = ticket.status === 'RESERVED';
+              const isDisabled = isSold || isReserved || !isActive;
+
+              let btnStyle =
+                'relative flex flex-col items-center justify-center p-2 rounded-xl text-sm font-semibold transition-all duration-150 border ';
+
+              if (isSelected) {
+                btnStyle +=
+                  'bg-accent text-white border-accent shadow-md scale-105 ring-2 ring-accent/30';
+              } else if (isSold) {
+                btnStyle +=
+                  'bg-foreground/5 text-fg-muted border-border-base/40 opacity-40 cursor-not-allowed';
+              } else if (isReserved) {
+                btnStyle +=
+                  'bg-warning/10 text-warning-strong border-warning/30 opacity-70 cursor-not-allowed';
+              } else {
+                btnStyle +=
+                  'bg-background hover:bg-accent-subtle hover:border-accent text-heading border-border-base cursor-pointer hover:scale-102';
+              }
+
+              return (
+                <button
+                  key={ticket.id || ticket.ticketNumber}
+                  type="button"
+                  disabled={isDisabled}
+                  onClick={() => toggleTicket(ticket.ticketNumber)}
+                  className={btnStyle}
+                  title={
+                    isSold
+                      ? `Boleto #${ticket.ticketNumber} ya vendido`
+                      : isReserved
+                        ? `Boleto #${ticket.ticketNumber} en proceso de pago`
+                        : `Seleccionar boleto #${ticket.ticketNumber}`
+                  }
+                >
+                  <span className="text-xs opacity-75">#</span>
+                  <span className="text-base font-bold">{ticket.ticketNumber}</span>
+
+                  {isSold && (
+                    <LuLock
+                      size={12}
+                      className="absolute top-1 right-1 opacity-70"
+                    />
+                  )}
+                  {isSelected && (
+                    <LuCheck
+                      size={12}
+                      className="absolute top-1 right-1 text-white"
+                    />
+                  )}
+                  {ticket.isMine && (
+                    <span className="absolute -bottom-1 rounded-full bg-success-strong px-1 text-[9px] font-bold text-white uppercase">
+                      Tuyo
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ─── BARRA RESUMEN Y BOTÓN DE COMPRA ─── */}
+        <div className="bg-background border-border-base flex flex-col items-center justify-between gap-4 rounded-xl border p-4 sm:flex-row">
+          <div className="space-y-1 text-center sm:text-left">
+            {selectedNumbers.length > 0 ? (
+              <>
+                <p className="text-sm font-medium text-heading">
+                  Boletos seleccionados:{' '}
+                  <span className="font-bold text-accent">
+                    {selectedNumbers.map((n) => `#${n}`).join(', ')}
+                  </span>{' '}
+                  <span className="text-fg-muted">({selectedNumbers.length} boleto(s))</span>
+                </p>
+                <p className="text-lg font-extrabold text-success-strong">
+                  Total a pagar: {formatCurrency(totalSelectedPrice)}
+                </p>
+              </>
+            ) : (
+              <p className="text-fg-muted text-sm">
+                Ningún boleto seleccionado. Haz clic en los números libres para agregarlos a tu compra.
+              </p>
+            )}
+          </div>
+
+          <div className="flex w-full items-center justify-end gap-3 sm:w-auto">
+            {selectedNumbers.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setSelectedNumbers([])}
+                className="text-fg-muted hover:text-foreground text-xs underline cursor-pointer"
+              >
+                Limpiar selección
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={handleStartCheckout}
+              disabled={selectedNumbers.length === 0 || !isActive || createCheckout.isPending}
+              className={`flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white transition-all duration-150 cursor-pointer ${
+                selectedNumbers.length === 0 || !isActive
+                  ? 'bg-foreground/20 cursor-not-allowed opacity-50'
+                  : 'bg-accent hover:brightness-110 active:brightness-95 shadow-md shadow-accent/20'
+              }`}
+            >
+              {createCheckout.isPending ? (
+                <>
+                  <LuLoader size={18} className="animate-spin" />
+                  Apartando boletos...
+                </>
+              ) : isAuthenticated ? (
+                <>
+                  <LuTicket size={18} />
+                  {isExpired ? (
+                    'Fecha límite vencida'
+                  ) : selectedNumbers.length === 0 ? (
+                    'Selecciona boletos'
+                  ) : (
+                    `Comprar ${selectedNumbers.length} boleto(s)`
+                  )}
+                </>
+              ) : (
+                <>
+                  <LuLock size={18} />
+                  Iniciá sesión para comprar
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {!isAuthenticated && (
+          <div className="flex items-center justify-center gap-2 text-xs text-fg-muted pt-1">
+            <LuShieldAlert size={14} className="text-accent" />
+            <span>
+              Debes tener una sesión activa para que los boletos se registren a tu nombre tras pagar.
+            </span>
+          </div>
+        )}
+      </section>
+
+      {/* ─── MODAL CHECKOUT STRIPE ELEMENTS ─── */}
+      {checkoutData && (
+        <StripeCheckoutModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          raffleName={raffle.name}
+          ticketNumbers={checkoutData.ticketNumbers}
+          clientSecret={checkoutData.clientSecret}
+          paymentIntentId={checkoutData.paymentIntentId}
+          totalAmount={checkoutData.totalAmount}
+          onSuccess={handleCheckoutSuccess}
+        />
+      )}
     </div>
   );
 }

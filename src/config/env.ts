@@ -23,6 +23,8 @@ interface Env {
   VITE_REQUEST_TIMEOUT: number;
   /** Application name */
   VITE_APP_NAME: string;
+  /** Stripe public key */
+  VITE_STRIPE_PUBLIC_KEY?: string;
 }
 
 // ─── Validation ────────────────────────────────────────────
@@ -66,6 +68,7 @@ function validateEnv(): Env {
     VITE_AUTH_ME_PATH: getEnvVar('VITE_AUTH_ME_PATH') || '/auth/me',
     VITE_REQUEST_TIMEOUT: getEnvNumber('VITE_REQUEST_TIMEOUT', 15000),
     VITE_APP_NAME: getEnvVar('VITE_APP_NAME') || 'TiendaRifas',
+    VITE_STRIPE_PUBLIC_KEY: getEnvVar('VITE_STRIPE_PUBLIC_KEY', false) || '',
   };
 }
 

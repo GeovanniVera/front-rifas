@@ -6,12 +6,21 @@ import Input from '@components/primitives/Input';
 import Card from '@components/layout/Card';
 import { useToast } from '@components/feedback';
 import { useUpdateProfile } from '../../features/profile/hooks/useProfile';
-import { LuCamera, LuShieldCheck } from 'react-icons/lu';
+import { useRafflesAdmin } from '../../features/store/hooks/useRaffles';
+import { formatCurrency } from '../../config/constants';
+import { LuCamera, LuShieldCheck, LuWallet, LuTrendingUp, LuTicket } from 'react-icons/lu';
 
 export default function PerfilPage() {
   const { user } = useAuth();
   const toast = useToast();
   const updateProfile = useUpdateProfile();
+
+  const isAdmin = user?.roles?.includes('admin') || user?.roles?.includes('role-admin');
+  const { data: raffles = [] } = useRafflesAdmin({ enabled: !!isAdmin });
+
+  const totalEarned = raffles.reduce((sum, r) => sum + r.ticketsSold * r.ticketPrice, 0);
+  const totalTicketsSold = raffles.reduce((sum, r) => sum + r.ticketsSold, 0);
+  const activeRafflesCount = raffles.filter((r) => r.status === 'ACTIVE').length;
 
   const [name, setName] = useState(user?.name ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
@@ -30,8 +39,6 @@ export default function PerfilPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // El email no es editable: no puede haber diferencia de email que gatille
-    // una confirmación. Solo nombre y foto viajan al backend (ver doSave).
     doSave();
   };
 
@@ -54,6 +61,70 @@ export default function PerfilPage() {
           <h2 className="text-fg text-lg font-semibold">Mi perfil</h2>
           <p className="text-fg-muted text-sm">Edita tu información personal y foto de perfil.</p>
         </div>
+
+        {/* Sección de ganancias para la cuenta del Administrador */}
+        {isAdmin && (
+          <Card variant="elevated">
+            <Card.Header>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 10,
+                      background: 'var(--accent-bg)',
+                      color: 'var(--accent)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <LuWallet size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-fg font-semibold text-base">Balance de la Cuenta de Administrador</h3>
+                    <p className="text-fg-muted text-xs">Total acumulado generado por la venta de boletos.</p>
+                  </div>
+                </div>
+                <Badge variant="success">Cuenta Administrador</Badge>
+              </div>
+            </Card.Header>
+            <Card.Body>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="p-4 rounded-xl border border-border-base bg-surface">
+                  <div className="text-xs text-fg-muted font-medium uppercase tracking-wider flex items-center gap-1.5">
+                    <LuTrendingUp size={14} className="text-accent" /> Total Recaudado
+                  </div>
+                  <div className="text-2xl font-bold text-accent mt-1">
+                    {formatCurrency(totalEarned)}
+                  </div>
+                  <div className="text-[11px] text-fg-muted mt-1">Ingresos acumulados</div>
+                </div>
+
+                <div className="p-4 rounded-xl border border-border-base bg-surface">
+                  <div className="text-xs text-fg-muted font-medium uppercase tracking-wider flex items-center gap-1.5">
+                    <LuTicket size={14} className="text-fg-muted" /> Boletos Vendidos
+                  </div>
+                  <div className="text-2xl font-bold text-fg mt-1">
+                    {totalTicketsSold}
+                  </div>
+                  <div className="text-[11px] text-fg-muted mt-1">En todas las rifas</div>
+                </div>
+
+                <div className="p-4 rounded-xl border border-border-base bg-surface">
+                  <div className="text-xs text-fg-muted font-medium uppercase tracking-wider">
+                    Rifas Activas
+                  </div>
+                  <div className="text-2xl font-bold text-fg mt-1">
+                    {activeRafflesCount}
+                  </div>
+                  <div className="text-[11px] text-fg-muted mt-1">Recibiendo compras</div>
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <Card variant="elevated">

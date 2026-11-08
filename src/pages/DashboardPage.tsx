@@ -9,6 +9,7 @@ import Card from '@components/layout/Card';
 import { StatCard, StatCardGroup } from '@components/layout/StatCard';
 import { useProductsAdmin } from '../features/store/hooks/useProducts';
 import { useRafflesAdmin } from '../features/store/hooks/useRaffles';
+import { formatCurrency } from '../config/constants';
 import {
   LuPackage,
   LuTicket,
@@ -18,6 +19,7 @@ import {
   LuShoppingBag,
   LuUser,
   LuScrollText,
+  LuCircleDollarSign,
 } from 'react-icons/lu';
 
 export default function DashboardPage() {
@@ -34,6 +36,7 @@ export default function DashboardPage() {
 
   const activeRaffles = raffles.filter((r) => r.status === 'ACTIVE');
   const ticketsSold = raffles.reduce((sum, r) => sum + r.ticketsSold, 0);
+  const totalRevenue = raffles.reduce((sum, r) => sum + r.ticketsSold * r.ticketPrice, 0);
 
   const hasAdminPrivilege = canReadProducts || canReadRaffles || canReadUsers;
 
@@ -118,19 +121,11 @@ export default function DashboardPage() {
         {/* Stats de administración (solo visibles si tiene permisos de catálogo o rifas) */}
         {(canReadProducts || canReadRaffles) && (
           <StatCardGroup>
-            <Can privilege="products.read">
-              <StatCard
-                value={products.length}
-                label="Productos"
-                icon={LuPackage}
-                accent="#6366f1"
-              />
-            </Can>
             <Can privilege="raffles.read">
               <StatCard
-                value={activeRaffles.length}
-                label="Rifas activas"
-                icon={LuTicket}
+                value={formatCurrency(totalRevenue)}
+                label="Ganancias por boletos"
+                icon={LuCircleDollarSign}
                 accent="#10b981"
               />
             </Can>
@@ -140,6 +135,22 @@ export default function DashboardPage() {
                 label="Boletos vendidos"
                 icon={LuTicket}
                 accent="#f59e0b"
+              />
+            </Can>
+            <Can privilege="raffles.read">
+              <StatCard
+                value={activeRaffles.length}
+                label="Rifas activas"
+                icon={LuTicket}
+                accent="#6366f1"
+              />
+            </Can>
+            <Can privilege="products.read">
+              <StatCard
+                value={products.length}
+                label="Productos"
+                icon={LuPackage}
+                accent="#8b5cf6"
               />
             </Can>
           </StatCardGroup>

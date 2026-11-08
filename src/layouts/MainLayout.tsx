@@ -24,6 +24,7 @@ import NavGroup from '@components/navigation/sidebar/NavGroup';
 import { useAuth } from '../auth';
 import { Can } from '../auth/Can';
 import { formatDisplayName } from '../lib/utils';
+import { NotificationBell } from '../features/notifications/components/NotificationBell';
 import styles from './MainLayout.module.css';
 
 // ─── Route config ────────────────────────────────────────
@@ -268,7 +269,12 @@ export default function MainLayout() {
       </Sidebar>
 
       <main className={styles.main}>
-        <Breadcrumbs />
+        <div className={styles.topBar}>
+          <Breadcrumbs />
+          <div className={styles.topBarActions}>
+            <NotificationBell />
+          </div>
+        </div>
         <Outlet />
       </main>
     </div>

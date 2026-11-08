@@ -116,7 +116,7 @@ export default function AdminRafflesPage() {
         const total = row.ticketCount;
         const pct = total > 0 ? Math.round((sold / total) * 100) : 0;
         return (
-          <span className={sold > 0 ? 'text-accent' : 'text-fg-muted'}>
+          <span className={sold > 0 ? 'text-accent font-medium' : 'text-fg-muted'}>
             {sold} ({pct}%)
           </span>
         );
@@ -127,6 +127,21 @@ export default function AdminRafflesPage() {
       header: 'Precio/boleto',
       minWidth: '100px',
       render: (value: unknown) => formatCurrency(Number(value)),
+    },
+    {
+      key: 'revenue',
+      header: 'Recaudado',
+      minWidth: '130px',
+      render: (_: unknown, row: Raffle) => {
+        const earned = row.ticketsSold * row.ticketPrice;
+        const total = row.ticketCount * row.ticketPrice;
+        return (
+          <div className="flex flex-col">
+            <span className="font-semibold text-accent">{formatCurrency(earned)}</span>
+            <span className="text-fg-muted text-[11px]">de {formatCurrency(total)}</span>
+          </div>
+        );
+      },
     },
     {
       key: 'drawDate',
@@ -232,6 +247,12 @@ export default function AdminRafflesPage() {
   const previewTotalRevenue = previewTicketPrice * previewTotalTickets;
   const previewProfit = previewTotalRevenue - cost;
 
+  // Resumen financiero global de rifas
+  const totalEarned = raffles.reduce((sum, r) => sum + r.ticketsSold * r.ticketPrice, 0);
+  const totalTicketsSold = raffles.reduce((sum, r) => sum + r.ticketsSold, 0);
+  const totalCapacity = raffles.reduce((sum, r) => sum + r.ticketCount, 0);
+  const soldOutRaffles = raffles.filter((r) => r.status === 'DRAW' || r.status === 'FINISHED').length;
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -242,11 +263,11 @@ export default function AdminRafflesPage() {
 
   return (
     <div style={{ padding: '32px 40px', maxWidth: 1440, width: '100%', margin: '0 auto' }}>
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-fg text-lg font-semibold">Rifas</h2>
-            <p className="text-fg-muted text-sm">{raffles.length} rifas</p>
+            <h2 className="text-fg text-lg font-semibold">Gestión de Rifas</h2>
+            <p className="text-fg-muted text-sm">{raffles.length} rifas registradas</p>
           </div>
           <Can privilege="raffles.write">
             <Button
@@ -258,6 +279,33 @@ export default function AdminRafflesPage() {
               Crear rifa
             </Button>
           </Can>
+        </div>
+
+        {/* Resumen financiero superior */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="p-4 rounded-xl border border-border-base bg-surface">
+            <div className="text-xs text-fg-muted font-medium uppercase tracking-wider">Ingresos por Boletos</div>
+            <div className="text-2xl font-bold text-accent mt-1">
+              {formatCurrency(totalEarned)}
+            </div>
+            <div className="text-[11px] text-fg-muted mt-0.5">Recaudación acumulada</div>
+          </div>
+          <div className="p-4 rounded-xl border border-border-base bg-surface">
+            <div className="text-xs text-fg-muted font-medium uppercase tracking-wider">Boletos Vendidos</div>
+            <div className="text-2xl font-bold text-fg mt-1">
+              {totalTicketsSold} <span className="text-xs font-normal text-fg-muted">/ {totalCapacity}</span>
+            </div>
+            <div className="text-[11px] text-fg-muted mt-0.5">
+              {totalCapacity > 0 ? `${Math.round((totalTicketsSold / totalCapacity) * 100)}% de ocupación` : 'Sin boletos'}
+            </div>
+          </div>
+          <div className="p-4 rounded-xl border border-border-base bg-surface">
+            <div className="text-xs text-fg-muted font-medium uppercase tracking-wider">Rifas Agotadas</div>
+            <div className="text-2xl font-bold text-fg mt-1">
+              {soldOutRaffles} <span className="text-xs font-normal text-fg-muted">rifas</span>
+            </div>
+            <div className="text-[11px] text-fg-muted mt-0.5">En fase de sorteo o finalizadas</div>
+          </div>
         </div>
 
         <ResponsiveTable

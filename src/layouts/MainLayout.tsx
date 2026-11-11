@@ -125,7 +125,6 @@ function AppNavItems() {
           ) : undefined
         }
       />
-      <NavItem as={NavLink} to="/" icon={LuShoppingBag} label="Ir a la tienda" />
 
       <Can anyOf={['products.read', 'raffles.read']}>
         <NavGroup

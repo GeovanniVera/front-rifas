@@ -14,6 +14,7 @@ import {
   LuShoppingBag,
   LuPackage,
   LuTicket,
+  LuBell,
 } from 'react-icons/lu';
 import Sidebar from '@components/navigation/sidebar/Sidebar';
 import SidebarLogo from '@components/navigation/sidebar/SidebarLogo';
@@ -24,6 +25,8 @@ import NavGroup from '@components/navigation/sidebar/NavGroup';
 import { useAuth } from '../auth';
 import { Can } from '../auth/Can';
 import { formatDisplayName } from '../lib/utils';
+import { NotificationBell } from '../features/notifications/components/NotificationBell';
+import { useUnreadNotificationsCount } from '../features/notifications/hooks/useNotifications';
 import styles from './MainLayout.module.css';
 
 // ─── Route config ────────────────────────────────────────
@@ -36,6 +39,10 @@ const ROUTE_CONFIG: Record<string, RouteConfig> = {
   dashboard: {
     title: 'Dashboard',
     subtitle: 'Vista general del sistema.',
+  },
+  notificaciones: {
+    title: 'Notificaciones',
+    subtitle: 'Centro de notificaciones y avisos del sistema.',
   },
   ajustes: { title: 'Ajustes', subtitle: 'Configuración de la aplicación.' },
   colores: { title: 'Colores de marca', subtitle: 'Personaliza los colores de la aplicación.' },
@@ -86,6 +93,7 @@ function useIsActive() {
 
 function AppNavItems() {
   const isActive = useIsActive();
+  const { data: unreadCount = 0 } = useUnreadNotificationsCount();
   const [adminOpen, setAdminOpen] = useState<boolean>(() => isActive('/admin'));
   const [tiendaOpen, setTiendaOpen] = useState<boolean>(
     () => isActive('/admin/productos') || isActive('/admin/rifas'),
@@ -94,6 +102,29 @@ function AppNavItems() {
   return (
     <>
       <NavItem to="/dashboard" icon={LuHouse} label="Dashboard" active={isActive('/dashboard')} />
+      <NavItem
+        as={NavLink}
+        to="/notificaciones"
+        icon={LuBell}
+        label="Notificaciones"
+        active={isActive('/notificaciones')}
+        badge={
+          unreadCount > 0 ? (
+            <span
+              style={{
+                background: 'var(--accent)',
+                color: '#ffffff',
+                fontSize: 11,
+                fontWeight: 700,
+                padding: '1px 7px',
+                borderRadius: 999,
+              }}
+            >
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          ) : undefined
+        }
+      />
       <NavItem as={NavLink} to="/" icon={LuShoppingBag} label="Ir a la tienda" />
 
       <Can anyOf={['products.read', 'raffles.read']}>
@@ -268,7 +299,12 @@ export default function MainLayout() {
       </Sidebar>
 
       <main className={styles.main}>
-        <Breadcrumbs />
+        <div className={styles.topBar}>
+          <Breadcrumbs />
+          <div className={styles.topBarActions}>
+            <NotificationBell />
+          </div>
+        </div>
         <Outlet />
       </main>
     </div>

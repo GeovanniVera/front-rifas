@@ -1,8 +1,15 @@
 import { Link } from 'react-router';
 import { Can } from '../../auth/Can';
-import { LuUsers, LuShield, LuKeyRound, LuScrollText } from 'react-icons/lu';
+import { LuUsers, LuShield, LuKeyRound, LuScrollText, LuBell } from 'react-icons/lu';
 
 const adminSections = [
+  {
+    to: '/notificaciones',
+    icon: LuBell,
+    label: 'Notificaciones',
+    desc: 'Alertas automáticas de boletos agotados, sorteos y avisos del sistema.',
+    privilege: undefined,
+  },
   {
     to: '/admin/usuarios',
     icon: LuUsers,

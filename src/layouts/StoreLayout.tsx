@@ -17,6 +17,7 @@ import {
   LuTruck,
   LuCreditCard,
 } from 'react-icons/lu';
+import { NotificationBell } from '../features/notifications/components/NotificationBell';
 import styles from './StoreLayout.module.css';
 
 /**
@@ -56,6 +57,7 @@ export default function StoreLayout() {
           <nav className={styles.nav}>
             {isLoading ? null : isAuthenticated ? (
               <>
+                <NotificationBell />
                 <Link to="/dashboard" className={styles.navBtn}>
                   {isAdminOrStaff ? <LuLayoutDashboard size={16} /> : <LuUser size={16} />}
                   {isAdminOrStaff ? 'Panel de control' : 'Mi cuenta'}

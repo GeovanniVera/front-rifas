@@ -7,6 +7,7 @@ export interface Raffle {
   id: string;
   productId: string;
   productName?: string;
+  productPrice?: number;
   productImageUrl?: string;
   name: string;
   description?: string;

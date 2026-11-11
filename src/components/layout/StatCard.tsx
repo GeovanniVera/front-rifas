@@ -1,8 +1,8 @@
 import type { IconType } from 'react-icons';
 
 export interface StatCardProps {
-  /** Valor numérico a mostrar */
-  value: number;
+  /** Valor numérico o texto formateado (ej. moneda) a mostrar */
+  value: number | string;
   /** Label descriptivo (se muestra en mayúsculas) */
   label: string;
   /** Color de acento (borde superior + ícono) */
@@ -59,10 +59,8 @@ const STAT_CARD_CLASSES =
 const ICON_BOX_CLASSES =
   'flex items-center justify-center size-10 rounded-[10px] bg-(--icon-bg) text-(--accent-color) shrink-0';
 
-const VALUE_CLASSES =
-  'text-[32px] font-bold leading-none text-heading tabular-nums tracking-[-0.02em]';
+const VALUE_CLASSES = 'font-(family-name:--heading) text-2xl font-bold text-fg leading-none';
 
-const LABEL_CLASSES =
-  'text-xs font-semibold uppercase tracking-[0.08em] text-foreground opacity-60 leading-none';
+const LABEL_CLASSES = 'text-xs font-semibold tracking-wider text-fg-muted uppercase';
 
-const STAT_GROUP_CLASSES = 'grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 mb-6';
+const STAT_GROUP_CLASSES = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4';

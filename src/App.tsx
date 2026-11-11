@@ -32,6 +32,7 @@ const AdminIndexPage = lazy(() => import('./pages/admin/AdminIndexPage'));
 const PerfilPage = lazy(() => import('./pages/ajustes/PerfilPage'));
 const AuditLogsPage = lazy(() => import('./pages/admin/AuditLogsPage'));
 const MiActividadPage = lazy(() => import('./pages/ajustes/MiActividadPage'));
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 
 // Store pages (lazy)
 const StoreHomePage = lazy(() => import('./pages/store/StoreHomePage'));
@@ -126,6 +127,7 @@ function App() {
               }
             >
               <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/notificaciones" element={<NotificationsPage />} />
               <Route
                 path="/admin/productos"
                 element={

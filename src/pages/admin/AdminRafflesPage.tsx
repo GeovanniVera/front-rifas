@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router';
 import {
   useRafflesAdmin,
   useCreateRaffle,
@@ -44,6 +45,17 @@ export default function AdminRafflesPage() {
   const [statusAction, setStatusAction] = useState<{ raffle: Raffle; status: RaffleStatus } | null>(
     null,
   );
+  const [searchParams, setSearchParams] = useSearchParams();
+  const targetId = searchParams.get('id');
+
+  const targetRaffle = useMemo(() => {
+    return targetId ? raffles.find((r) => r.id === targetId) : undefined;
+  }, [targetId, raffles]);
+
+  const displayRaffles = useMemo(() => {
+    if (!targetId || !targetRaffle) return raffles;
+    return [targetRaffle, ...raffles.filter((r) => r.id !== targetId)];
+  }, [targetId, targetRaffle, raffles]);
 
   const availableProducts = products.filter((p) => p.stock > 0);
 
@@ -137,7 +149,7 @@ export default function AdminRafflesPage() {
         const total = row.ticketCount * row.ticketPrice;
         return (
           <div className="flex flex-col">
-            <span className="font-semibold text-accent">{formatCurrency(earned)}</span>
+            <span className="text-accent font-semibold">{formatCurrency(earned)}</span>
             <span className="text-fg-muted text-[11px]">de {formatCurrency(total)}</span>
           </div>
         );
@@ -251,7 +263,9 @@ export default function AdminRafflesPage() {
   const totalEarned = raffles.reduce((sum, r) => sum + r.ticketsSold * r.ticketPrice, 0);
   const totalTicketsSold = raffles.reduce((sum, r) => sum + r.ticketsSold, 0);
   const totalCapacity = raffles.reduce((sum, r) => sum + r.ticketCount, 0);
-  const soldOutRaffles = raffles.filter((r) => r.status === 'DRAW' || r.status === 'FINISHED').length;
+  const soldOutRaffles = raffles.filter(
+    (r) => r.status === 'DRAW' || r.status === 'FINISHED',
+  ).length;
 
   if (isLoading) {
     return (
@@ -282,35 +296,100 @@ export default function AdminRafflesPage() {
         </div>
 
         {/* Resumen financiero superior */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="p-4 rounded-xl border border-border-base bg-surface">
-            <div className="text-xs text-fg-muted font-medium uppercase tracking-wider">Ingresos por Boletos</div>
-            <div className="text-2xl font-bold text-accent mt-1">
-              {formatCurrency(totalEarned)}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="border-border-base bg-surface rounded-xl border p-4">
+            <div className="text-fg-muted text-xs font-medium tracking-wider uppercase">
+              Ingresos por Boletos
             </div>
-            <div className="text-[11px] text-fg-muted mt-0.5">Recaudación acumulada</div>
+            <div className="text-accent mt-1 text-2xl font-bold">{formatCurrency(totalEarned)}</div>
+            <div className="text-fg-muted mt-0.5 text-[11px]">Recaudación acumulada</div>
           </div>
-          <div className="p-4 rounded-xl border border-border-base bg-surface">
-            <div className="text-xs text-fg-muted font-medium uppercase tracking-wider">Boletos Vendidos</div>
-            <div className="text-2xl font-bold text-fg mt-1">
-              {totalTicketsSold} <span className="text-xs font-normal text-fg-muted">/ {totalCapacity}</span>
+          <div className="border-border-base bg-surface rounded-xl border p-4">
+            <div className="text-fg-muted text-xs font-medium tracking-wider uppercase">
+              Boletos Vendidos
             </div>
-            <div className="text-[11px] text-fg-muted mt-0.5">
-              {totalCapacity > 0 ? `${Math.round((totalTicketsSold / totalCapacity) * 100)}% de ocupación` : 'Sin boletos'}
+            <div className="text-fg mt-1 text-2xl font-bold">
+              {totalTicketsSold}{' '}
+              <span className="text-fg-muted text-xs font-normal">/ {totalCapacity}</span>
+            </div>
+            <div className="text-fg-muted mt-0.5 text-[11px]">
+              {totalCapacity > 0
+                ? `${Math.round((totalTicketsSold / totalCapacity) * 100)}% de ocupación`
+                : 'Sin boletos'}
             </div>
           </div>
-          <div className="p-4 rounded-xl border border-border-base bg-surface">
-            <div className="text-xs text-fg-muted font-medium uppercase tracking-wider">Rifas Agotadas</div>
-            <div className="text-2xl font-bold text-fg mt-1">
-              {soldOutRaffles} <span className="text-xs font-normal text-fg-muted">rifas</span>
+          <div className="border-border-base bg-surface rounded-xl border p-4">
+            <div className="text-fg-muted text-xs font-medium tracking-wider uppercase">
+              Rifas Agotadas
             </div>
-            <div className="text-[11px] text-fg-muted mt-0.5">En fase de sorteo o finalizadas</div>
+            <div className="text-fg mt-1 text-2xl font-bold">
+              {soldOutRaffles} <span className="text-fg-muted text-xs font-normal">rifas</span>
+            </div>
+            <div className="text-fg-muted mt-0.5 text-[11px]">En fase de sorteo o finalizadas</div>
           </div>
         </div>
 
+        {targetRaffle && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '12px 18px',
+              borderRadius: 12,
+              background: 'var(--accent-bg)',
+              border: '1px solid var(--accent-border)',
+              marginBottom: 16,
+              flexWrap: 'wrap',
+              gap: 12,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  background: 'var(--accent)',
+                  flexShrink: 0,
+                }}
+              />
+              <span style={{ fontSize: 14, color: 'var(--text-h)' }}>
+                Rifa enfocada desde notificaciones: <strong>{targetRaffle.name}</strong> — Estado:{' '}
+                <Badge variant={STATUS_LABEL[targetRaffle.status].variant}>
+                  {STATUS_LABEL[targetRaffle.status].label}
+                </Badge>
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {targetRaffle.status === 'DRAW' && (
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={() => setStatusAction({ raffle: targetRaffle, status: 'FINISHED' })}
+                >
+                  Finalizar sorteo
+                </Button>
+              )}
+              {targetRaffle.status === 'ACTIVE' && (
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={() => setStatusAction({ raffle: targetRaffle, status: 'DRAW' })}
+                >
+                  Iniciar sorteo
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" onClick={() => setSearchParams({})}>
+                Ver todas las rifas
+              </Button>
+            </div>
+          </div>
+        )}
+
         <ResponsiveTable
           columns={columns}
-          data={raffles}
+          data={displayRaffles}
           keyExtractor={(row) => row.id}
           filters={true}
           pagination={true}

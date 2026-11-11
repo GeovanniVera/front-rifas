@@ -1,4 +1,4 @@
-import { type ElementType } from 'react';
+import { type ElementType, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { useSidebar } from './context';
 
@@ -19,6 +19,8 @@ interface NavItemProps {
   className?: string;
   /** Handler de click (útil cuando as="button") */
   onClick?: () => void;
+  /** Elemento distintivo o contador numérico */
+  badge?: ReactNode;
 }
 
 /*
@@ -51,6 +53,7 @@ export default function NavItem({
   danger = false,
   className = '',
   onClick,
+  badge,
 }: NavItemProps) {
   const { expanded } = useSidebar();
   const Component = as || Link;
@@ -74,8 +77,31 @@ export default function NavItem({
 
   return (
     <Component {...componentProps} className={itemClass}>
-      <Icon size={20} />
+      <div
+        style={{
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Icon size={20} />
+        {!expanded && Boolean(badge) && (
+          <span
+            style={{
+              position: 'absolute',
+              top: -4,
+              right: -4,
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              backgroundColor: 'var(--accent)',
+            }}
+          />
+        )}
+      </div>
       <span className={textClass}>{label}</span>
+      {expanded && Boolean(badge) && <span style={{ marginLeft: 'auto' }}>{badge}</span>}
     </Component>
   );
 }

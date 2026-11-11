@@ -32,16 +32,22 @@ export const notificationsService = {
   /**
    * Obtiene la lista paginada de notificaciones del usuario.
    */
-  list: async (unreadOnly = false, page = 0, size = 15): Promise<InAppNotification[]> => {
+  list: async (unreadOnly = false, page = 0, size = 20): Promise<InAppNotification[]> => {
     const params = new URLSearchParams({
       unreadOnly: String(unreadOnly),
       page: String(page),
       size: String(size),
-      sort: 'createdAt,desc',
     });
-    const res = await client.get<SpringPage<InAppNotification>>(`/notifications?${params.toString()}`);
+    const res = await client.get<SpringPage<InAppNotification> | InAppNotification[]>(
+      `/notifications?${params.toString()}`,
+    );
     if (res.success && res.data) {
-      return res.data.content || [];
+      if (Array.isArray(res.data)) {
+        return res.data;
+      }
+      if (Array.isArray((res.data as SpringPage<InAppNotification>).content)) {
+        return (res.data as SpringPage<InAppNotification>).content;
+      }
     }
     return [];
   },

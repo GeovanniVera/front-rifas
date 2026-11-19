@@ -3,6 +3,9 @@ import {
   ticketService,
   type CreateCheckoutIntentData,
   type ConfirmCheckoutData,
+  type RegisterOxxoData,
+  type SimulateOxxoData,
+  type PendingOxxoReservation,
   type RaffleTicket,
 } from '../services/tickets.service';
 
@@ -54,6 +57,59 @@ export function useConfirmCheckout() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['store', 'raffles'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'raffles'] });
     },
+  });
+}
+
+export function useRegisterOxxo() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: RegisterOxxoData) => {
+      const response = await ticketService.registerOxxo(data);
+      if (!response.success || !response.data) {
+        throw new Error(response.message || 'Error al registrar orden OXXO');
+      }
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store', 'raffles'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'checkout', 'reservas-oxxo'] });
+    },
+  });
+}
+
+export function useSimulateOxxo() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: SimulateOxxoData) => {
+      const response = await ticketService.simulateOxxo(data);
+      if (!response.success || !response.data) {
+        throw new Error(response.message || 'Error al simular pago en OXXO');
+      }
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store', 'raffles'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'checkout', 'reservas-oxxo'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'raffles'] });
+    },
+  });
+}
+
+export function usePendingOxxoReservations(options?: { enabled?: boolean }) {
+  return useQuery<PendingOxxoReservation[]>({
+    queryKey: ['admin', 'checkout', 'reservas-oxxo'],
+    queryFn: async () => {
+      const response = await ticketService.listPendingOxxo();
+      if (!response.success || !response.data) {
+        throw new Error(response.message || 'Error al obtener reservas OXXO');
+      }
+      return response.data;
+    },
+    refetchInterval: 10000,
+    enabled: options?.enabled ?? true,
   });
 }

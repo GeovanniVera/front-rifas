@@ -8,6 +8,7 @@ import {
 } from '../features/notifications/hooks/useNotifications';
 import type { InAppNotification } from '../features/notifications/services/notifications.service';
 import { useRafflesAdmin } from '../features/store/hooks/useRaffles';
+import { useHasPrivilege } from '../auth/hooks';
 import {
   LuBell,
   LuCheckCheck,
@@ -26,7 +27,8 @@ export default function NotificationsPage() {
 
   const { data: unreadCount = 0 } = useUnreadNotificationsCount();
   const { data: allNotifications = [], isLoading } = useNotifications(false);
-  const { data: raffles = [] } = useRafflesAdmin();
+  const canReadRaffles = useHasPrivilege('raffles.read');
+  const { data: raffles = [] } = useRafflesAdmin({ enabled: canReadRaffles });
   const markAsRead = useMarkNotificationAsRead();
   const markAllAsRead = useMarkAllNotificationsAsRead();
 

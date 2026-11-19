@@ -7,6 +7,7 @@ import {
   useDeleteRaffle,
 } from '../../features/store/hooks/useRaffles';
 import { useProductsAdmin } from '../../features/store/hooks/useProducts';
+import { usePendingOxxoReservations, useSimulateOxxo } from '../../features/store/hooks/useTickets';
 import ResponsiveTable from '@components/data-display/table/ResponsiveTable';
 import Button from '@components/primitives/Button';
 import Badge from '@components/primitives/Badge';
@@ -17,7 +18,7 @@ import { Can } from '../../auth/Can';
 import { useHasPrivilege } from '../../auth/hooks';
 import type { Raffle, RaffleStatus } from '../../features/store/services/raffles.service';
 import { RAFFLE_CONFIG, formatCurrency } from '../../config/constants';
-import { LuPlus, LuTrash2 } from 'react-icons/lu';
+import { LuPlus, LuTrash2, LuClock, LuLoader, LuSparkles } from 'react-icons/lu';
 
 const STATUS_LABEL: Record<
   RaffleStatus,
@@ -38,6 +39,9 @@ export default function AdminRafflesPage() {
   const createRaffle = useCreateRaffle();
   const changeStatus = useChangeRaffleStatus();
   const deleteRaffle = useDeleteRaffle();
+  const { data: pendingOxxo = [] } = usePendingOxxoReservations({ enabled: canReadRaffles });
+  const simulateOxxo = useSimulateOxxo();
+  const [simulatingId, setSimulatingId] = useState<string | null>(null);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [form, setForm] = useState({ productId: '', drawDate: '' });
@@ -296,7 +300,7 @@ export default function AdminRafflesPage() {
         </div>
 
         {/* Resumen financiero superior */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="border-border-base bg-surface rounded-xl border p-4">
             <div className="text-fg-muted text-xs font-medium tracking-wider uppercase">
               Ingresos por Boletos
@@ -327,7 +331,121 @@ export default function AdminRafflesPage() {
             </div>
             <div className="text-fg-muted mt-0.5 text-[11px]">En fase de sorteo o finalizadas</div>
           </div>
+          <div className="border-border-base bg-surface rounded-xl border p-4">
+            <div className="text-fg-muted flex items-center justify-between text-xs font-medium tracking-wider uppercase">
+              <span>Depósitos OXXO</span>
+              {pendingOxxo.length > 0 && (
+                <span className="rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-black text-white uppercase">
+                  Pendientes
+                </span>
+              )}
+            </div>
+            <div className="text-fg mt-1 text-2xl font-bold">
+              {pendingOxxo.length}{' '}
+              <span className="text-fg-muted text-xs font-normal">por cobrar</span>
+            </div>
+            <div className="text-fg-muted mt-0.5 text-[11px]">
+              {pendingOxxo.length > 0
+                ? `${formatCurrency(pendingOxxo.reduce((s, r) => s + r.totalAmount, 0))} en espera`
+                : 'Sin depósitos pendientes'}
+            </div>
+          </div>
         </div>
+
+        {/* Sección de Depósitos OXXO Pendientes de Pago */}
+        {pendingOxxo.length > 0 && (
+          <div className="bg-surface border-border-base space-y-4 rounded-2xl border p-5 shadow-sm">
+            <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
+              <div className="flex items-center gap-2.5">
+                <span className="rounded bg-red-600 px-2 py-0.5 text-xs font-black tracking-wider text-white uppercase">
+                  OXXO Pay
+                </span>
+                <h3 className="text-heading text-base font-bold">
+                  Depósitos en efectivo pendientes ({pendingOxxo.length})
+                </h3>
+              </div>
+              <p className="text-fg-muted text-xs">
+                Vouchers de depósito pendientes de pago en tiendas OXXO. Puedes acreditarlos aquí
+                manualmente.
+              </p>
+            </div>
+
+            <div className="divide-border-base border-border-base divide-y overflow-hidden rounded-xl border">
+              {pendingOxxo.map((res) => (
+                <div
+                  key={res.paymentIntentId}
+                  className="bg-background flex flex-col justify-between gap-4 p-4 md:flex-row md:items-center"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-heading text-sm font-semibold">{res.raffleName}</span>
+                      <span className="text-accent text-xs font-bold">
+                        Boletos: {res.ticketNumbers.map((n) => `#${n}`).join(', ')}
+                      </span>
+                    </div>
+                    <div className="text-fg-muted flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                      <span>
+                        Comprador: <strong>{res.userName}</strong> ({res.userEmail})
+                      </span>
+                      <span>
+                        Total a cobrar:{' '}
+                        <strong className="text-success-strong">
+                          {formatCurrency(res.totalAmount)}
+                        </strong>
+                      </span>
+                      <span className="flex items-center gap-1 font-medium text-amber-600 dark:text-amber-400">
+                        <LuClock size={13} />
+                        {res.expired
+                          ? 'Reserva vencida (liberándose)'
+                          : `Expira en ${res.minutesRemaining} min`}
+                      </span>
+                    </div>
+                    <div className="text-fg-muted font-mono text-[11px]">
+                      ID Pago: {res.paymentIntentId}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={async () => {
+                        setSimulatingId(res.paymentIntentId);
+                        try {
+                          await simulateOxxo.mutateAsync({
+                            paymentIntentId: res.paymentIntentId,
+                          });
+                          toast.success(
+                            `¡Depósito OXXO acreditado para ${res.userName}! Boletos confirmados.`,
+                          );
+                        } catch (err: unknown) {
+                          const msg =
+                            err instanceof Error ? err.message : 'Error al acreditar depósito';
+                          toast.error(msg);
+                        } finally {
+                          setSimulatingId(null);
+                        }
+                      }}
+                      disabled={simulatingId === res.paymentIntentId}
+                    >
+                      {simulatingId === res.paymentIntentId ? (
+                        <>
+                          <LuLoader size={14} className="animate-spin" />
+                          Acreditando...
+                        </>
+                      ) : (
+                        <>
+                          <LuSparkles size={14} />
+                          Acreditar pago OXXO
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {targetRaffle && (
           <div

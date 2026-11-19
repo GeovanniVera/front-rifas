@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useRaffle } from '../../features/store/hooks/useRaffles';
-import {
-  useRaffleTickets,
-  useCreateCheckoutIntent,
-} from '../../features/store/hooks/useTickets';
+import { useRaffleTickets, useCreateCheckoutIntent } from '../../features/store/hooks/useTickets';
 import {
   LuArrowLeft,
   LuTicket,
@@ -121,9 +118,11 @@ export default function RaffleDetailPage() {
   const { isAuthenticated } = useAuth();
 
   const { data: raffle, isLoading: raffleLoading, error } = useRaffle(id ?? '');
-  const { data: tickets = [], isLoading: ticketsLoading, refetch: refetchTickets } = useRaffleTickets(
-    id ?? '',
-  );
+  const {
+    data: tickets = [],
+    isLoading: ticketsLoading,
+    refetch: refetchTickets,
+  } = useRaffleTickets(id ?? '');
   const createCheckout = useCreateCheckoutIntent();
 
   const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]);
@@ -231,6 +230,34 @@ export default function RaffleDetailPage() {
 
       {/* ─── TABLERO INTERACTIVO DE BOLETOS ─── */}
       <section className="bg-surface border-border-base space-y-6 rounded-2xl border p-6 shadow-sm">
+        {/* Banner informativo de boletos apartados en OXXO */}
+        {tickets.some((t) => t.isMine && t.status === 'RESERVED' && t.paymentMethod === 'OXXO') && (
+          <div className="text-heading flex items-center justify-between rounded-xl border border-red-500/20 bg-red-500/10 p-3.5 text-xs sm:text-sm">
+            <div className="flex items-center gap-2.5">
+              <span className="rounded bg-red-600 px-2 py-0.5 text-[10px] font-black tracking-wider text-white uppercase">
+                OXXO Pay
+              </span>
+              <span>
+                Tienes{' '}
+                <strong>
+                  {
+                    tickets.filter(
+                      (t) => t.isMine && t.status === 'RESERVED' && t.paymentMethod === 'OXXO',
+                    ).length
+                  }{' '}
+                  boleto(s)
+                </strong>{' '}
+                apartados (
+                {tickets
+                  .filter((t) => t.isMine && t.status === 'RESERVED' && t.paymentMethod === 'OXXO')
+                  .map((t) => `#${t.ticketNumber}`)
+                  .join(', ')}
+                ) con reserva activa por 3 horas para depósito en efectivo.
+              </span>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-heading flex items-center gap-2 text-xl font-bold">
@@ -244,17 +271,21 @@ export default function RaffleDetailPage() {
 
           {/* Leyenda de colores */}
           <div className="flex flex-wrap items-center gap-3 text-xs">
-            <span className="flex items-center gap-1.5 font-medium text-foreground">
+            <span className="text-foreground flex items-center gap-1.5 font-medium">
               <span className="border-border-base bg-background inline-block size-3.5 rounded border" />
               Disponible
             </span>
-            <span className="flex items-center gap-1.5 font-medium text-foreground">
+            <span className="text-foreground flex items-center gap-1.5 font-medium">
               <span className="bg-accent inline-block size-3.5 rounded" />
               Seleccionado
             </span>
-            <span className="flex items-center gap-1.5 font-medium text-foreground">
+            <span className="text-foreground flex items-center gap-1.5 font-medium">
+              <span className="bg-warning/20 border-warning/40 inline-block size-3.5 rounded border" />
+              Apartado
+            </span>
+            <span className="text-foreground flex items-center gap-1.5 font-medium">
               <span className="bg-foreground/15 border-border-base inline-block size-3.5 rounded border opacity-60" />
-              Ocupado / Vendido
+              Vendido
             </span>
           </div>
         </div>
@@ -311,21 +342,21 @@ export default function RaffleDetailPage() {
                   <span className="text-xs opacity-75">#</span>
                   <span className="text-base font-bold">{ticket.ticketNumber}</span>
 
-                  {isSold && (
-                    <LuLock
-                      size={12}
-                      className="absolute top-1 right-1 opacity-70"
-                    />
-                  )}
+                  {isSold && <LuLock size={12} className="absolute top-1 right-1 opacity-70" />}
                   {isSelected && (
-                    <LuCheck
-                      size={12}
-                      className="absolute top-1 right-1 text-white"
-                    />
+                    <LuCheck size={12} className="absolute top-1 right-1 text-white" />
                   )}
                   {ticket.isMine && (
-                    <span className="absolute -bottom-1 rounded-full bg-success-strong px-1 text-[9px] font-bold text-white uppercase">
-                      Tuyo
+                    <span
+                      className={`absolute -bottom-1 rounded-full px-1 text-[9px] font-bold text-white uppercase ${
+                        isReserved ? 'bg-amber-600' : 'bg-success-strong'
+                      }`}
+                    >
+                      {isReserved
+                        ? ticket.paymentMethod === 'OXXO'
+                          ? 'OXXO'
+                          : 'Apartado'
+                        : 'Tuyo'}
                     </span>
                   )}
                 </button>
@@ -339,20 +370,21 @@ export default function RaffleDetailPage() {
           <div className="space-y-1 text-center sm:text-left">
             {selectedNumbers.length > 0 ? (
               <>
-                <p className="text-sm font-medium text-heading">
+                <p className="text-heading text-sm font-medium">
                   Boletos seleccionados:{' '}
-                  <span className="font-bold text-accent">
+                  <span className="text-accent font-bold">
                     {selectedNumbers.map((n) => `#${n}`).join(', ')}
                   </span>{' '}
                   <span className="text-fg-muted">({selectedNumbers.length} boleto(s))</span>
                 </p>
-                <p className="text-lg font-extrabold text-success-strong">
+                <p className="text-success-strong text-lg font-extrabold">
                   Total a pagar: {formatCurrency(totalSelectedPrice)}
                 </p>
               </>
             ) : (
               <p className="text-fg-muted text-sm">
-                Ningún boleto seleccionado. Haz clic en los números libres para agregarlos a tu compra.
+                Ningún boleto seleccionado. Haz clic en los números libres para agregarlos a tu
+                compra.
               </p>
             )}
           </div>
@@ -362,7 +394,7 @@ export default function RaffleDetailPage() {
               <button
                 type="button"
                 onClick={() => setSelectedNumbers([])}
-                className="text-fg-muted hover:text-foreground text-xs underline cursor-pointer"
+                className="text-fg-muted hover:text-foreground cursor-pointer text-xs underline"
               >
                 Limpiar selección
               </button>
@@ -372,10 +404,10 @@ export default function RaffleDetailPage() {
               type="button"
               onClick={handleStartCheckout}
               disabled={selectedNumbers.length === 0 || !isActive || createCheckout.isPending}
-              className={`flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white transition-all duration-150 cursor-pointer ${
+              className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white transition-all duration-150 ${
                 selectedNumbers.length === 0 || !isActive
                   ? 'bg-foreground/20 cursor-not-allowed opacity-50'
-                  : 'bg-accent hover:brightness-110 active:brightness-95 shadow-md shadow-accent/20'
+                  : 'bg-accent shadow-accent/20 shadow-md hover:brightness-110 active:brightness-95'
               }`}
             >
               {createCheckout.isPending ? (
@@ -386,13 +418,11 @@ export default function RaffleDetailPage() {
               ) : isAuthenticated ? (
                 <>
                   <LuTicket size={18} />
-                  {isExpired ? (
-                    'Fecha límite vencida'
-                  ) : selectedNumbers.length === 0 ? (
-                    'Selecciona boletos'
-                  ) : (
-                    `Comprar ${selectedNumbers.length} boleto(s)`
-                  )}
+                  {isExpired
+                    ? 'Fecha límite vencida'
+                    : selectedNumbers.length === 0
+                      ? 'Selecciona boletos'
+                      : `Comprar ${selectedNumbers.length} boleto(s)`}
                 </>
               ) : (
                 <>
@@ -405,10 +435,11 @@ export default function RaffleDetailPage() {
         </div>
 
         {!isAuthenticated && (
-          <div className="flex items-center justify-center gap-2 text-xs text-fg-muted pt-1">
+          <div className="text-fg-muted flex items-center justify-center gap-2 pt-1 text-xs">
             <LuShieldAlert size={14} className="text-accent" />
             <span>
-              Debes tener una sesión activa para que los boletos se registren a tu nombre tras pagar.
+              Debes tener una sesión activa para que los boletos se registren a tu nombre tras
+              pagar.
             </span>
           </div>
         )}

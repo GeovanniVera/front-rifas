@@ -6,6 +6,8 @@ import {
   type RegisterOxxoData,
   type SimulateOxxoData,
   type PendingOxxoReservation,
+  type RegisterTransferData,
+  type PendingTransferReservation,
   type RaffleTicket,
 } from '../services/tickets.service';
 
@@ -54,6 +56,24 @@ export function useConfirmCheckout() {
         throw new Error(response.message || 'Error al confirmar compra');
       }
       return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store', 'raffles'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'raffles'] });
+    },
+  });
+}
+
+export function useCancelCheckout() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: ConfirmCheckoutData) => {
+      const response = await ticketService.cancelCheckout(data);
+      if (!response.success) {
+        throw new Error(response.message || 'Error al cancelar la reserva');
+      }
+      return response.data ?? [];
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['store', 'raffles'] });
@@ -111,5 +131,76 @@ export function usePendingOxxoReservations(options?: { enabled?: boolean }) {
     },
     refetchInterval: 10000,
     enabled: options?.enabled ?? true,
+  });
+}
+
+export function useRegisterTransfer() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: RegisterTransferData) => {
+      const response = await ticketService.registerTransfer(data);
+      if (!response.success || !response.data) {
+        throw new Error(response.message || 'Error al registrar transferencia bancaria');
+      }
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store', 'raffles'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'checkout', 'reservas-transferencia'] });
+    },
+  });
+}
+
+export function usePendingTransferReservations(options?: { enabled?: boolean }) {
+  return useQuery<PendingTransferReservation[]>({
+    queryKey: ['admin', 'checkout', 'reservas-transferencia'],
+    queryFn: async () => {
+      const response = await ticketService.listPendingTransfers();
+      if (!response.success || !response.data) {
+        throw new Error(response.message || 'Error al obtener transferencias pendientes');
+      }
+      return response.data;
+    },
+    refetchInterval: 10000,
+    enabled: options?.enabled ?? true,
+  });
+}
+
+export function useConfirmTransfer() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: ConfirmCheckoutData) => {
+      const response = await ticketService.confirmTransfer(data);
+      if (!response.success || !response.data) {
+        throw new Error(response.message || 'Error al acreditar transferencia');
+      }
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store', 'raffles'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'checkout', 'reservas-transferencia'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'raffles'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'earnings'] });
+    },
+  });
+}
+
+export function useRejectTransfer() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: ConfirmCheckoutData) => {
+      const response = await ticketService.rejectTransfer(data);
+      if (!response.success || !response.data) {
+        throw new Error(response.message || 'Error al liberar transferencia');
+      }
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store', 'raffles'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'checkout', 'reservas-transferencia'] });
+    },
   });
 }

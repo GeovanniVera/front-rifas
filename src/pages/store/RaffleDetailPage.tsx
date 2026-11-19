@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useRaffle } from '../../features/store/hooks/useRaffles';
 import { useRaffleTickets, useCreateCheckoutIntent } from '../../features/store/hooks/useTickets';
@@ -74,37 +74,64 @@ function RaffleStats({ raffle }: { raffle: Raffle }) {
   );
 }
 
-function RaffleNotice({ drawDate, isExpired }: { drawDate?: string; isExpired?: boolean }) {
-  const formattedDate = drawDate
-    ? new Date(drawDate).toLocaleString('es-MX', {
-        dateStyle: 'long',
-        timeStyle: 'short',
-      })
-    : 'Fecha de sorteo por programar';
+function RaffleNotice({
+  startDate,
+  drawDate,
+  isExpired,
+  notStarted,
+}: {
+  startDate?: string;
+  drawDate?: string;
+  isExpired?: boolean;
+  notStarted?: boolean;
+}) {
+  const formatLong = (val?: string) =>
+    val
+      ? new Date(val).toLocaleString('es-MX', {
+          dateStyle: 'long',
+          timeStyle: 'short',
+        })
+      : null;
+
+  const formattedStart = formatLong(startDate);
+  const formattedEnd = formatLong(drawDate);
+
+  let rangeText = 'Fecha de sorteo por programar';
+  if (formattedStart && formattedEnd) {
+    rangeText = `Del ${formattedStart} al ${formattedEnd}`;
+  } else if (formattedEnd) {
+    rangeText = `Sorteo: ${formattedEnd}`;
+  } else if (formattedStart) {
+    rangeText = `Inicia: ${formattedStart}`;
+  }
 
   return (
     <div
       className={`space-y-1.5 rounded-lg border p-4 ${
-        isExpired ? 'border-warning/30 bg-warning/10' : 'border-border-base bg-surface'
+        isExpired || notStarted
+          ? 'border-warning/30 bg-warning/10'
+          : 'border-border-base bg-surface'
       }`}
     >
       <div
         className={`flex items-center gap-2 text-sm font-semibold ${
-          isExpired ? 'text-warning-strong' : 'text-accent'
+          isExpired || notStarted ? 'text-warning-strong' : 'text-accent'
         }`}
       >
         <LuCalendar size={16} />
-        <span>{drawDate ? `Sorteo: ${formattedDate}` : formattedDate}</span>
+        <span>{rangeText}</span>
       </div>
       <p className="text-fg-muted flex items-start gap-1.5 text-xs">
         <LuInfo
           size={14}
-          className={`mt-0.5 shrink-0 ${isExpired ? 'text-warning-strong' : 'text-accent'}`}
+          className={`mt-0.5 shrink-0 ${isExpired || notStarted ? 'text-warning-strong' : 'text-accent'}`}
         />
         <span>
           {isExpired
             ? 'La fecha límite de esta rifa ya pasó. El sorteo está en proceso o finalizado; la venta de boletos ha cerrado.'
-            : 'Selecciona tus boletos favoritos en el tablero interactivo de abajo para participar en el sorteo.'}
+            : notStarted
+              ? 'La rifa ya está publicada para que conozcas el producto, pero la venta de boletos iniciará en la fecha programada.'
+              : 'Selecciona tus boletos favoritos en el tablero interactivo de abajo para participar en el sorteo.'}
         </span>
       </p>
     </div>
@@ -128,6 +155,12 @@ export default function RaffleDetailPage() {
   const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]);
   const [checkoutData, setCheckoutData] = useState<CheckoutIntentResponse | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNowMs(Date.now()), 5_000);
+    return () => clearInterval(timer);
+  }, []);
 
   if (raffleLoading) {
     return (
@@ -149,8 +182,9 @@ export default function RaffleDetailPage() {
     );
   }
 
-  const isExpired = raffle.drawDate ? new Date(raffle.drawDate).getTime() < Date.now() : false;
-  const isActive = raffle.status === 'ACTIVE' && !isExpired;
+  const notStarted = raffle.startDate ? new Date(raffle.startDate).getTime() > nowMs : false;
+  const isExpired = raffle.drawDate ? new Date(raffle.drawDate).getTime() < nowMs : false;
+  const isActive = raffle.status === 'ACTIVE' && !isExpired && !notStarted;
 
   const toggleTicket = (ticketNumber: number) => {
     setSelectedNumbers((prev) =>
@@ -224,7 +258,12 @@ export default function RaffleDetailPage() {
           {raffle.description && <p className={styles.description}>{raffle.description}</p>}
 
           <RaffleStats raffle={raffle} />
-          <RaffleNotice drawDate={raffle.drawDate} isExpired={isExpired} />
+          <RaffleNotice
+            startDate={raffle.startDate}
+            drawDate={raffle.drawDate}
+            isExpired={isExpired}
+            notStarted={notStarted}
+          />
         </div>
       </div>
 
@@ -253,6 +292,38 @@ export default function RaffleDetailPage() {
                   .map((t) => `#${t.ticketNumber}`)
                   .join(', ')}
                 ) con reserva activa por 3 horas para depósito en efectivo.
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Banner informativo de boletos apartados por Transferencia SPEI */}
+        {tickets.some(
+          (t) => t.isMine && t.status === 'RESERVED' && t.paymentMethod === 'TRANSFER',
+        ) && (
+          <div className="text-heading border-border-base bg-background flex items-center justify-between rounded-xl border p-3.5 text-xs sm:text-sm">
+            <div className="flex items-center gap-2.5">
+              <span className="bg-accent rounded px-2 py-0.5 text-[10px] font-black tracking-wider text-white uppercase">
+                SPEI
+              </span>
+              <span>
+                Tienes{' '}
+                <strong>
+                  {
+                    tickets.filter(
+                      (t) => t.isMine && t.status === 'RESERVED' && t.paymentMethod === 'TRANSFER',
+                    ).length
+                  }{' '}
+                  boleto(s)
+                </strong>{' '}
+                apartados (
+                {tickets
+                  .filter(
+                    (t) => t.isMine && t.status === 'RESERVED' && t.paymentMethod === 'TRANSFER',
+                  )
+                  .map((t) => `#${t.ticketNumber}`)
+                  .join(', ')}
+                ) con reserva activa por 3 horas mientras se acredita tu transferencia bancaria.
               </span>
             </div>
           </div>
@@ -319,6 +390,9 @@ export default function RaffleDetailPage() {
               } else if (isReserved) {
                 btnStyle +=
                   'bg-warning/10 text-warning-strong border-warning/30 opacity-70 cursor-not-allowed';
+              } else if (!isActive) {
+                btnStyle +=
+                  'bg-foreground/5 text-fg-muted border-border-base/40 opacity-55 cursor-not-allowed';
               } else {
                 btnStyle +=
                   'bg-background hover:bg-accent-subtle hover:border-accent text-heading border-border-base cursor-pointer hover:scale-102';
@@ -336,7 +410,11 @@ export default function RaffleDetailPage() {
                       ? `Boleto #${ticket.ticketNumber} ya vendido`
                       : isReserved
                         ? `Boleto #${ticket.ticketNumber} en proceso de pago`
-                        : `Seleccionar boleto #${ticket.ticketNumber}`
+                        : notStarted
+                          ? `La venta de boletos aún no inicia`
+                          : isExpired
+                            ? `La rifa ya cerró`
+                            : `Seleccionar boleto #${ticket.ticketNumber}`
                   }
                 >
                   <span className="text-xs opacity-75">#</span>
@@ -355,7 +433,9 @@ export default function RaffleDetailPage() {
                       {isReserved
                         ? ticket.paymentMethod === 'OXXO'
                           ? 'OXXO'
-                          : 'Apartado'
+                          : ticket.paymentMethod === 'TRANSFER'
+                            ? 'SPEI'
+                            : 'Apartado'
                         : 'Tuyo'}
                     </span>
                   )}
@@ -420,9 +500,11 @@ export default function RaffleDetailPage() {
                   <LuTicket size={18} />
                   {isExpired
                     ? 'Fecha límite vencida'
-                    : selectedNumbers.length === 0
-                      ? 'Selecciona boletos'
-                      : `Comprar ${selectedNumbers.length} boleto(s)`}
+                    : notStarted
+                      ? 'Venta aún no inicia'
+                      : selectedNumbers.length === 0
+                        ? 'Selecciona boletos'
+                        : `Comprar ${selectedNumbers.length} boleto(s)`}
                 </>
               ) : (
                 <>
@@ -449,7 +531,11 @@ export default function RaffleDetailPage() {
       {checkoutData && (
         <StripeCheckoutModal
           isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => {
+            setIsModalOpen(false);
+            setCheckoutData(null);
+            refetchTickets();
+          }}
           raffleName={raffle.name}
           ticketNumbers={checkoutData.ticketNumbers}
           clientSecret={checkoutData.clientSecret}

@@ -40,6 +40,7 @@ const ProductDetailPage = lazy(() => import('./pages/store/ProductDetailPage'));
 const RaffleDetailPage = lazy(() => import('./pages/store/RaffleDetailPage'));
 const AdminProductsPage = lazy(() => import('./pages/admin/AdminProductsPage'));
 const AdminRafflesPage = lazy(() => import('./pages/admin/AdminRafflesPage'));
+const AdminEarningsPage = lazy(() => import('./pages/admin/AdminEarningsPage'));
 
 function App() {
   return (
@@ -141,6 +142,14 @@ function App() {
                 element={
                   <RequirePrivilege privilege="raffles.read">
                     <AdminRafflesPage />
+                  </RequirePrivilege>
+                }
+              />
+              <Route
+                path="/admin/ganancias"
+                element={
+                  <RequirePrivilege privilege="raffles.read">
+                    <AdminEarningsPage />
                   </RequirePrivilege>
                 }
               />

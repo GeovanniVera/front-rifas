@@ -15,6 +15,7 @@ import {
   LuPackage,
   LuTicket,
   LuBell,
+  LuCircleDollarSign,
 } from 'react-icons/lu';
 import Sidebar from '@components/navigation/sidebar/Sidebar';
 import SidebarLogo from '@components/navigation/sidebar/SidebarLogo';
@@ -43,6 +44,10 @@ const ROUTE_CONFIG: Record<string, RouteConfig> = {
   notificaciones: {
     title: 'Notificaciones',
     subtitle: 'Centro de notificaciones y avisos del sistema.',
+  },
+  ganancias: {
+    title: 'Ganancias',
+    subtitle: 'Revisión de ganancias por día, semana y quincena.',
   },
   ajustes: { title: 'Ajustes', subtitle: 'Configuración de la aplicación.' },
   colores: { title: 'Colores de marca', subtitle: 'Personaliza los colores de la aplicación.' },
@@ -102,6 +107,15 @@ function AppNavItems() {
   return (
     <>
       <NavItem to="/dashboard" icon={LuHouse} label="Dashboard" active={isActive('/dashboard')} />
+      <Can privilege="raffles.read">
+        <NavItem
+          as={NavLink}
+          to="/admin/ganancias"
+          icon={LuCircleDollarSign}
+          label="Ganancias"
+          active={isActive('/admin/ganancias')}
+        />
+      </Can>
       <NavItem
         as={NavLink}
         to="/notificaciones"

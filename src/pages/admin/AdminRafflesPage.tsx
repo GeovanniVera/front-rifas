@@ -7,7 +7,13 @@ import {
   useDeleteRaffle,
 } from '../../features/store/hooks/useRaffles';
 import { useProductsAdmin } from '../../features/store/hooks/useProducts';
-import { usePendingOxxoReservations, useSimulateOxxo } from '../../features/store/hooks/useTickets';
+import {
+  usePendingOxxoReservations,
+  useSimulateOxxo,
+  usePendingTransferReservations,
+  useConfirmTransfer,
+  useRejectTransfer,
+} from '../../features/store/hooks/useTickets';
 import ResponsiveTable from '@components/data-display/table/ResponsiveTable';
 import Button from '@components/primitives/Button';
 import Badge from '@components/primitives/Badge';
@@ -30,6 +36,17 @@ const STATUS_LABEL: Record<
   CANCELLED: { label: 'Cancelada', variant: 'danger' },
 };
 
+function getLocalDatetimeBounds() {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const datePart = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  const timePart = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  return {
+    todayStart: `${datePart}T00:00`,
+    nowMinute: `${datePart}T${timePart}`,
+  };
+}
+
 export default function AdminRafflesPage() {
   const toast = useToast();
   const canReadProducts = useHasPrivilege('products.read');
@@ -41,10 +58,17 @@ export default function AdminRafflesPage() {
   const deleteRaffle = useDeleteRaffle();
   const { data: pendingOxxo = [] } = usePendingOxxoReservations({ enabled: canReadRaffles });
   const simulateOxxo = useSimulateOxxo();
+  const { data: pendingTransfers = [] } = usePendingTransferReservations({
+    enabled: canReadRaffles,
+  });
+  const confirmTransfer = useConfirmTransfer();
+  const rejectTransfer = useRejectTransfer();
   const [simulatingId, setSimulatingId] = useState<string | null>(null);
+  const [transferActionId, setTransferActionId] = useState<string | null>(null);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [form, setForm] = useState({ productId: '', drawDate: '' });
+  const [form, setForm] = useState({ productId: '', startDate: '', drawDate: '' });
+  const [dateBounds, setDateBounds] = useState(getLocalDatetimeBounds);
   const [deleting, setDeleting] = useState<Raffle | null>(null);
   const [statusAction, setStatusAction] = useState<{ raffle: Raffle; status: RaffleStatus } | null>(
     null,
@@ -64,7 +88,8 @@ export default function AdminRafflesPage() {
   const availableProducts = products.filter((p) => p.stock > 0);
 
   const openCreate = () => {
-    setForm({ productId: availableProducts[0]?.id ?? '', drawDate: '' });
+    setDateBounds(getLocalDatetimeBounds());
+    setForm({ productId: availableProducts[0]?.id ?? '', startDate: '', drawDate: '' });
     setDrawerOpen(true);
   };
 
@@ -73,8 +98,28 @@ export default function AdminRafflesPage() {
       toast.error('Seleccioná un producto');
       return;
     }
+    if (form.startDate) {
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      if (new Date(form.startDate) < startOfToday) {
+        toast.error('La fecha de inicio no puede ser de un día anterior a hoy');
+        return;
+      }
+    }
+    if (form.drawDate && new Date(form.drawDate) <= new Date()) {
+      toast.error('La fecha de fin/sorteo debe ser posterior al momento actual');
+      return;
+    }
+    if (form.startDate && form.drawDate && new Date(form.drawDate) <= new Date(form.startDate)) {
+      toast.error('La fecha de fin/sorteo debe ser posterior a la fecha de inicio');
+      return;
+    }
     try {
-      await createRaffle.mutateAsync(form);
+      await createRaffle.mutateAsync({
+        productId: form.productId,
+        startDate: form.startDate || undefined,
+        drawDate: form.drawDate || undefined,
+      });
       toast.success('Rifa creada — el producto se apartó del stock');
       setDrawerOpen(false);
     } catch {
@@ -161,23 +206,38 @@ export default function AdminRafflesPage() {
     },
     {
       key: 'drawDate',
-      header: 'Sorteo',
-      minWidth: '140px',
-      render: (value: unknown) => {
-        if (!value) return <span className="text-fg-muted">—</span>;
-        const d = new Date(String(value));
-        return isNaN(d.getTime()) ? (
-          String(value)
-        ) : (
-          <span className="text-xs">
-            {d.toLocaleDateString('es-MX', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </span>
+      header: 'Periodo / Sorteo',
+      minWidth: '175px',
+      render: (value: unknown, row: Raffle) => {
+        const formatDt = (val?: string) => {
+          if (!val) return null;
+          const d = new Date(val);
+          return isNaN(d.getTime())
+            ? val
+            : d.toLocaleDateString('es-MX', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              });
+        };
+        const startStr = formatDt(row.startDate);
+        const endStr = formatDt(value ? String(value) : undefined);
+        if (!startStr && !endStr) return <span className="text-fg-muted">—</span>;
+        return (
+          <div className="flex flex-col gap-0.5 text-xs">
+            {startStr && (
+              <span className="text-fg-muted">
+                Inicio: <strong className="text-fg font-medium">{startStr}</strong>
+              </span>
+            )}
+            {endStr && (
+              <span className="text-fg-muted">
+                Fin: <strong className="text-fg font-medium">{endStr}</strong>
+              </span>
+            )}
+          </div>
         );
       },
     },
@@ -333,21 +393,24 @@ export default function AdminRafflesPage() {
           </div>
           <div className="border-border-base bg-surface rounded-xl border p-4">
             <div className="text-fg-muted flex items-center justify-between text-xs font-medium tracking-wider uppercase">
-              <span>Depósitos OXXO</span>
-              {pendingOxxo.length > 0 && (
+              <span>OXXO / Transferencias</span>
+              {pendingOxxo.length + pendingTransfers.length > 0 && (
                 <span className="rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-black text-white uppercase">
                   Pendientes
                 </span>
               )}
             </div>
             <div className="text-fg mt-1 text-2xl font-bold">
-              {pendingOxxo.length}{' '}
+              {pendingOxxo.length + pendingTransfers.length}{' '}
               <span className="text-fg-muted text-xs font-normal">por cobrar</span>
             </div>
             <div className="text-fg-muted mt-0.5 text-[11px]">
-              {pendingOxxo.length > 0
-                ? `${formatCurrency(pendingOxxo.reduce((s, r) => s + r.totalAmount, 0))} en espera`
-                : 'Sin depósitos pendientes'}
+              {pendingOxxo.length + pendingTransfers.length > 0
+                ? `${formatCurrency(
+                    pendingOxxo.reduce((s, r) => s + r.totalAmount, 0) +
+                      pendingTransfers.reduce((s, r) => s + r.totalAmount, 0),
+                  )} en espera`
+                : 'Sin depósitos ni SPEI pendientes'}
             </div>
           </div>
         </div>
@@ -437,6 +500,130 @@ export default function AdminRafflesPage() {
                         <>
                           <LuSparkles size={14} />
                           Acreditar pago OXXO
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Sección de Transferencias Bancarias SPEI Pendientes */}
+        {pendingTransfers.length > 0 && (
+          <div className="bg-surface border-border-base space-y-4 rounded-2xl border p-5 shadow-sm">
+            <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
+              <div className="flex items-center gap-2.5">
+                <span className="bg-accent rounded px-2 py-0.5 text-xs font-black tracking-wider text-white uppercase">
+                  SPEI
+                </span>
+                <h3 className="text-heading text-base font-bold">
+                  Transferencias bancarias pendientes ({pendingTransfers.length})
+                </h3>
+              </div>
+              <p className="text-fg-muted text-xs">
+                Valida en tu banco la transferencia con la referencia asignada y acredítala aquí.
+              </p>
+            </div>
+
+            <div className="divide-border-base border-border-base divide-y overflow-hidden rounded-xl border">
+              {pendingTransfers.map((res) => (
+                <div
+                  key={res.paymentIntentId}
+                  className="bg-background flex flex-col justify-between gap-4 p-4 md:flex-row md:items-center"
+                >
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-heading text-sm font-semibold">{res.raffleName}</span>
+                      <span className="text-accent text-xs font-bold">
+                        Boletos: {res.ticketNumbers.map((n) => `#${n}`).join(', ')}
+                      </span>
+                      <span className="bg-surface border-border-base text-heading rounded border px-2 py-0.5 font-mono text-[11px] font-bold">
+                        Ref: {res.referenceCode}
+                      </span>
+                    </div>
+                    <div className="text-fg-muted flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                      <span>
+                        Comprador: <strong>{res.userName}</strong> ({res.userEmail})
+                      </span>
+                      <span>
+                        Monto esperado:{' '}
+                        <strong className="text-success-strong">
+                          {formatCurrency(res.totalAmount)}
+                        </strong>
+                      </span>
+                      {res.trackingReference && (
+                        <span>
+                          Rastreo: <strong className="font-mono">{res.trackingReference}</strong>
+                        </span>
+                      )}
+                      <span className="text-warning-strong flex items-center gap-1 font-medium">
+                        <LuClock size={13} />
+                        {res.expired
+                          ? 'Reserva vencida (liberándose)'
+                          : `Expira en ${res.minutesRemaining} min`}
+                      </span>
+                    </div>
+                    <div className="text-fg-muted font-mono text-[11px]">
+                      ID Pago: {res.paymentIntentId}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      disabled={transferActionId === res.paymentIntentId}
+                      onClick={async () => {
+                        setTransferActionId(res.paymentIntentId);
+                        try {
+                          await rejectTransfer.mutateAsync({
+                            paymentIntentId: res.paymentIntentId,
+                          });
+                          toast.info(`Reserva liberada para ${res.userName}.`);
+                        } catch (err: unknown) {
+                          const msg =
+                            err instanceof Error ? err.message : 'Error al liberar reserva';
+                          toast.error(msg);
+                        } finally {
+                          setTransferActionId(null);
+                        }
+                      }}
+                    >
+                      Liberar
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      disabled={transferActionId === res.paymentIntentId}
+                      onClick={async () => {
+                        setTransferActionId(res.paymentIntentId);
+                        try {
+                          await confirmTransfer.mutateAsync({
+                            paymentIntentId: res.paymentIntentId,
+                          });
+                          toast.success(
+                            `¡Transferencia acreditada para ${res.userName}! Boletos confirmados.`,
+                          );
+                        } catch (err: unknown) {
+                          const msg =
+                            err instanceof Error ? err.message : 'Error al acreditar transferencia';
+                          toast.error(msg);
+                        } finally {
+                          setTransferActionId(null);
+                        }
+                      }}
+                    >
+                      {transferActionId === res.paymentIntentId ? (
+                        <>
+                          <LuLoader size={14} className="animate-spin" />
+                          Procesando...
+                        </>
+                      ) : (
+                        <>
+                          <LuSparkles size={14} />
+                          Acreditar transferencia
                         </>
                       )}
                     </Button>
@@ -546,20 +733,42 @@ export default function AdminRafflesPage() {
 
             <div>
               <label
+                htmlFor="raffle-start-date"
+                className="text-fg mb-1.5 block text-sm font-medium"
+              >
+                Fecha de inicio de la rifa
+              </label>
+              <input
+                id="raffle-start-date"
+                type="datetime-local"
+                min={dateBounds.todayStart}
+                value={form.startDate}
+                onChange={(e) => setForm((prev) => ({ ...prev, startDate: e.target.value }))}
+                className="border-border-base bg-background text-fg w-full rounded-md border px-3 py-2 text-sm"
+              />
+              <p className="text-fg-muted mt-1 text-xs">
+                Opcional. Solo permite fechas desde hoy en adelante (si es futura, los clientes
+                verán la rifa pero comprarán al iniciar).
+              </p>
+            </div>
+
+            <div>
+              <label
                 htmlFor="raffle-draw-date"
                 className="text-fg mb-1.5 block text-sm font-medium"
               >
-                Fecha estimada del sorteo
+                Fecha de fin / sorteo
               </label>
               <input
                 id="raffle-draw-date"
                 type="datetime-local"
+                min={form.startDate || dateBounds.nowMinute}
                 value={form.drawDate}
                 onChange={(e) => setForm((prev) => ({ ...prev, drawDate: e.target.value }))}
                 className="border-border-base bg-background text-fg w-full rounded-md border px-3 py-2 text-sm"
               />
               <p className="text-fg-muted mt-1 text-xs">
-                Opcional. Fecha y hora en la que se realizará el sorteo.
+                Opcional. Fecha límite de venta y realización del sorteo.
               </p>
             </div>
 

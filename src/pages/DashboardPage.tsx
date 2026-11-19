@@ -42,6 +42,13 @@ export default function DashboardPage() {
 
   const adminQuickActions = [
     {
+      to: '/admin/ganancias',
+      icon: LuCircleDollarSign,
+      title: 'Ganancias (Día / Semana / Quincena)',
+      desc: 'Consulta cortes separados, gráficas y exporta en PDF o Excel.',
+      privilege: 'raffles.read',
+    },
+    {
       to: '/admin/productos',
       icon: LuPackage,
       title: 'Productos',

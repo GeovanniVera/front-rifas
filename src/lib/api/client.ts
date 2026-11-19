@@ -460,6 +460,56 @@ export const client = {
    */
   delete: <T>(path: string, options?: RequestInit) =>
     request<T>('DELETE', path, undefined, options),
+
+  /**
+   * Descarga un archivo binario (PDF, XLSX, etc.) con autenticación y refresh automático.
+   */
+  downloadBlob: async (path: string, fallbackFilename: string): Promise<void> => {
+    const baseUrl = config.baseUrl ?? '';
+    const url = path.startsWith('http') ? path : `${baseUrl}${path}`;
+
+    const doFetch = async (): Promise<Response> => {
+      if (accessToken && authStorage.isExpired()) {
+        const refreshed = await tryRefreshToken();
+        if (!refreshed) {
+          tokenManager.clear();
+          window.dispatchEvent(new CustomEvent('auth:logout'));
+          throw new Error(getErrorMessage('UNAUTHORIZED'));
+        }
+      }
+
+      return fetch(url, {
+        method: 'GET',
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+      });
+    };
+
+    let response = await doFetch();
+    if (response.status === 401 && hasSessionToken()) {
+      const refreshed = await tryRefreshToken();
+      if (refreshed) {
+        response = await doFetch();
+      }
+    }
+
+    if (!response.ok) {
+      throw new Error(getErrorMessage(mapStatusToErrorCode(response.status)));
+    }
+
+    const blob = await response.blob();
+    const disposition = response.headers.get('content-disposition');
+    const filenameMatch = disposition?.match(/filename="?([^"]+)"?/i);
+    const filename = filenameMatch?.[1] || fallbackFilename;
+
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(blobUrl);
+  },
 };
 
 // ─── Configuración del cliente ─────────────────────────────

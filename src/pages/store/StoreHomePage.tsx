@@ -120,18 +120,36 @@ export default function StoreHomePage() {
                 <div className={styles.cardBody}>
                   <h3 className={styles.cardTitle}>{raffle.name}</h3>
                   <p className={styles.cardDesc}>{raffle.ticketCount} boletos emitidos</p>
-                  {raffle.drawDate && (
-                    <div className="text-accent flex items-center gap-1.5 text-xs font-medium">
-                      <LuCalendar size={13} className="shrink-0" />
+                  {(raffle.startDate || raffle.drawDate) && (
+                    <div className="text-accent flex items-start gap-1.5 text-xs font-medium">
+                      <LuCalendar size={13} className="mt-0.5 shrink-0" />
                       <span>
-                        Sorteo:{' '}
-                        {new Date(raffle.drawDate).toLocaleDateString('es-MX', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
+                        {raffle.startDate && raffle.drawDate
+                          ? `Del ${new Date(raffle.startDate).toLocaleDateString('es-MX', {
+                              day: 'numeric',
+                              month: 'short',
+                            })} al ${new Date(raffle.drawDate).toLocaleDateString('es-MX', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}`
+                          : raffle.drawDate
+                            ? `Sorteo: ${new Date(raffle.drawDate).toLocaleDateString('es-MX', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}`
+                            : `Inicia: ${new Date(raffle.startDate!).toLocaleDateString('es-MX', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}`}
                       </span>
                     </div>
                   )}
